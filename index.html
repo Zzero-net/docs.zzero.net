@@ -717,6 +717,16 @@ tr:hover td {
   </div>
 
   <div class="sidebar-section">
+    <div class="sidebar-heading">For Providers</div>
+    <a href="#provider-overview" class="sidebar-link">Overview</a>
+    <a href="#website-paywall" class="sidebar-link">Website Paywall</a>
+    <a href="#api-paywall" class="sidebar-link">API Paywall</a>
+    <a href="#mcp-provider" class="sidebar-link">MCP Provider</a>
+    <a href="#provider-use-cases" class="sidebar-link">Use Cases</a>
+    <a href="#agent-discovery" class="sidebar-link">Agent Discovery</a>
+  </div>
+
+  <div class="sidebar-section">
     <div class="sidebar-heading">Validators</div>
     <a href="#running-a-validator" class="sidebar-link">Running a Validator</a>
     <a href="#hardware-requirements" class="sidebar-link">Hardware Requirements</a>
@@ -1425,6 +1435,213 @@ result = <span class="kw">await</span> client.<span class="fn">call_tool</span>(
 <div class="card card-cyan">
   <div class="card-title">Composability</div>
   <p style="margin-bottom:0;">An AI agent can chain multiple paid MCP tools in a single reasoning step: search (1 Z) -> fetch page (1 Z) -> summarize (2 Z). Total cost for a complex multi-tool query: 4 Z = $0.04. This is the economic substrate for autonomous AI workflows.</p>
+</div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     FOR PROVIDERS
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="provider-overview">
+<h2>For Providers: Accept Zero Payments</h2>
+<p>If you run a website, API, or MCP server, you can charge users and AI agents per request using Zero. No API keys to issue, no subscription management, no billing infrastructure. Agents and users pay per-use with Z tokens and get instant access.</p>
+
+<div class="card card-green">
+  <div class="card-title">Why Zero for Providers</div>
+  <ul style="margin-bottom:0;">
+    <li><strong>No signup flow</strong> -- agents pay and access, no registration needed</li>
+    <li><strong>Instant settlement</strong> -- payments confirm in &lt;500ms, no chargebacks</li>
+    <li><strong>Penny-scale pricing</strong> -- charge 0.01 Z ($0.0001) per request if you want</li>
+    <li><strong>x402 standard</strong> -- HTTP 402 status code, agents already understand it</li>
+    <li><strong>Revenue from AI traffic</strong> -- every agent that hits your endpoint can pay</li>
+  </ul>
+</div>
+</section>
+
+<section class="section" id="website-paywall">
+<h2>Website Paywall</h2>
+<p>Gate any webpage or content behind a Zero micropayment. When a user or agent requests the page, return HTTP 402 with payment details. After payment, serve the content.</p>
+
+<h3>Express.js Middleware</h3>
+<pre data-lang="javascript"><code><span class="kw">const</span> { ZeroPaywall } = <span class="fn">require</span>(<span class="str">'@zero-network/sdk'</span>);
+
+<span class="kw">const</span> paywall = <span class="kw">new</span> <span class="fn">ZeroPaywall</span>({
+  address: process.env.<span class="tp">ZERO_ADDRESS</span>,
+});
+
+<span class="cm">// Gate a route: 0.05 Z to read an article</span>
+app.<span class="fn">get</span>(<span class="str">'/article/:id'</span>, paywall.<span class="fn">gate</span>(<span class="num">5</span>), <span class="kw">async</span> (req, res) => {
+  <span class="cm">// Only reached after payment verified</span>
+  <span class="kw">const</span> article = <span class="kw">await</span> <span class="fn">getArticle</span>(req.params.id);
+  res.<span class="fn">json</span>(article);
+});
+
+<span class="cm">// Gate a download: 0.10 Z for a PDF</span>
+app.<span class="fn">get</span>(<span class="str">'/report/:id'</span>, paywall.<span class="fn">gate</span>(<span class="num">10</span>), <span class="kw">async</span> (req, res) => {
+  res.<span class="fn">sendFile</span>(reportPath);
+});</code></pre>
+
+<h3>What the Agent Sees</h3>
+<pre data-lang="http"><code><span class="cm">GET /article/42 HTTP/1.1</span>
+
+<span class="cm">HTTP/1.1 402 Payment Required</span>
+<span class="tp">Content-Type</span>: application/json
+
+{
+  <span class="str">"x-402-version"</span>: <span class="num">1</span>,
+  <span class="str">"x-402-network"</span>: <span class="str">"zero"</span>,
+  <span class="str">"x-402-amount"</span>: <span class="num">5</span>,
+  <span class="str">"x-402-address"</span>: <span class="str">"zr_pub..."</span>,
+  <span class="str">"x-402-description"</span>: <span class="str">"Pay 0.05 Z to read this article"</span>
+}</code></pre>
+<p>The agent's SDK auto-pays, attaches the receipt in an <code>X-Zero-Receipt</code> header, and retries. The middleware verifies and serves content. The entire flow takes &lt;1 second.</p>
+</section>
+
+<section class="section" id="api-paywall">
+<h2>API Paywall</h2>
+<p>Charge per API call with a single decorator. No API keys to manage, no rate limit tiers, no billing dashboard. Every call pays.</p>
+
+<h3>Python (FastAPI)</h3>
+<pre data-lang="python"><code><span class="kw">from</span> zero_sdk <span class="kw">import</span> x402_gate
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+
+app = <span class="fn">FastAPI</span>()
+
+<span class="pr">@app.get</span>(<span class="str">"/api/sentiment"</span>)
+<span class="pr">@x402_gate</span>(amount=<span class="num">1</span>)  <span class="cm"># 0.01 Z per call</span>
+<span class="kw">async def</span> <span class="fn">sentiment</span>(text: <span class="tp">str</span>):
+    <span class="kw">return</span> <span class="fn">analyze_sentiment</span>(text)
+
+<span class="pr">@app.get</span>(<span class="str">"/api/translate"</span>)
+<span class="pr">@x402_gate</span>(amount=<span class="num">3</span>)  <span class="cm"># 0.03 Z per call</span>
+<span class="kw">async def</span> <span class="fn">translate</span>(text: <span class="tp">str</span>, target_lang: <span class="tp">str</span>):
+    <span class="kw">return</span> <span class="fn">do_translate</span>(text, target_lang)
+
+<span class="pr">@app.get</span>(<span class="str">"/api/ocr"</span>)
+<span class="pr">@x402_gate</span>(amount=<span class="num">5</span>)  <span class="cm"># 0.05 Z per call</span>
+<span class="kw">async def</span> <span class="fn">ocr</span>(image_url: <span class="tp">str</span>):
+    <span class="kw">return</span> <span class="fn">extract_text</span>(image_url)</code></pre>
+
+<h3>Revenue Example</h3>
+<table class="params-table">
+  <thead><tr><th>Endpoint</th><th>Price</th><th>10K calls/day</th><th>100K calls/day</th></tr></thead>
+  <tbody>
+    <tr><td>/api/sentiment</td><td>0.01 Z</td><td>$1.00/day</td><td style="color:var(--green)">$10.00/day</td></tr>
+    <tr><td>/api/translate</td><td>0.03 Z</td><td>$3.00/day</td><td style="color:var(--green)">$30.00/day</td></tr>
+    <tr><td>/api/ocr</td><td>0.05 Z</td><td>$5.00/day</td><td style="color:var(--green)">$50.00/day</td></tr>
+  </tbody>
+</table>
+<p>No minimum volume. No setup cost. Deploy, set your price, and start earning from the first request.</p>
+</section>
+
+<section class="section" id="mcp-provider">
+<h2>MCP Provider</h2>
+<p>Build an MCP tool server that charges AI agents per tool invocation. Prices are advertised in the tool schema so agents know the cost before calling.</p>
+
+<h3>Server with Per-Tool Pricing</h3>
+<pre data-lang="python"><code><span class="kw">from</span> mcp.server <span class="kw">import</span> Server
+<span class="kw">from</span> zero <span class="kw">import</span> Wallet
+
+server = <span class="fn">Server</span>(<span class="str">"my-tools"</span>)
+wallet = Wallet.<span class="fn">from_env</span>()
+
+<span class="cm"># Each tool declares its price in the decorator</span>
+<span class="pr">@server.tool</span>(<span class="str">"web_search"</span>, zero_price=<span class="num">2</span>)  <span class="cm"># 0.02 Z</span>
+<span class="kw">async def</span> <span class="fn">search</span>(query: <span class="tp">str</span>):
+    <span class="kw">return</span> <span class="kw">await</span> <span class="fn">search_web</span>(query)
+
+<span class="pr">@server.tool</span>(<span class="str">"run_code"</span>, zero_price=<span class="num">10</span>)  <span class="cm"># 0.10 Z</span>
+<span class="kw">async def</span> <span class="fn">run_code</span>(code: <span class="tp">str</span>, language: <span class="tp">str</span>):
+    <span class="kw">return</span> <span class="kw">await</span> <span class="fn">sandbox_exec</span>(code, language)
+
+<span class="pr">@server.tool</span>(<span class="str">"image_gen"</span>, zero_price=<span class="num">25</span>)  <span class="cm"># 0.25 Z</span>
+<span class="kw">async def</span> <span class="fn">generate_image</span>(prompt: <span class="tp">str</span>):
+    <span class="kw">return</span> <span class="kw">await</span> <span class="fn">gen_image</span>(prompt)</code></pre>
+
+<h3>How Agents Discover Prices</h3>
+<p>When an agent calls <code>tools/list</code>, prices are included in the tool metadata:</p>
+<pre data-lang="json"><code>{
+  <span class="str">"tools"</span>: [
+    {
+      <span class="str">"name"</span>: <span class="str">"web_search"</span>,
+      <span class="str">"description"</span>: <span class="str">"Search the web"</span>,
+      <span class="str">"zero_price"</span>: <span class="num">2</span>,
+      <span class="str">"zero_address"</span>: <span class="str">"zr_pub..."</span>
+    },
+    {
+      <span class="str">"name"</span>: <span class="str">"run_code"</span>,
+      <span class="str">"description"</span>: <span class="str">"Execute code in sandbox"</span>,
+      <span class="str">"zero_price"</span>: <span class="num">10</span>,
+      <span class="str">"zero_address"</span>: <span class="str">"zr_pub..."</span>
+    }
+  ]
+}</code></pre>
+<p>The agent compares the price against its spending limits. If acceptable, it pays automatically and receives the tool result. No human approval needed for within-budget calls.</p>
+</section>
+
+<section class="section" id="provider-use-cases">
+<h2>Provider Use Cases</h2>
+<p>Zero enables new business models that weren't viable before penny-scale settlement existed.</p>
+
+<table class="params-table">
+  <thead><tr><th>Category</th><th>Example</th><th>Price Range</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Content</strong></td><td>Article access, research papers, dataset rows</td><td>0.01-0.25 Z</td></tr>
+    <tr><td><strong>AI Services</strong></td><td>Sentiment analysis, translation, summarization, embeddings</td><td>0.01-0.10 Z</td></tr>
+    <tr><td><strong>Compute</strong></td><td>Code sandbox, GPU inference, image generation</td><td>0.05-0.25 Z</td></tr>
+    <tr><td><strong>Data</strong></td><td>Real-time prices, weather, company data, search results</td><td>0.01-0.05 Z</td></tr>
+    <tr><td><strong>Infrastructure</strong></td><td>Bandwidth, storage, proxy, DNS lookups</td><td>0.01-0.02 Z</td></tr>
+    <tr><td><strong>IoT</strong></td><td>Sensor readings, unlock commands, charge sessions</td><td>0.01-0.10 Z</td></tr>
+    <tr><td><strong>Training Data</strong></td><td>RAG retrieval, dataset licensing, annotation</td><td>0.01 Z per row</td></tr>
+    <tr><td><strong>Media</strong></td><td>Streaming per minute, image downloads, audio clips</td><td>0.01-0.10 Z</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section class="section" id="agent-discovery">
+<h2>Agent Discovery Flow</h2>
+<p>When an AI agent encounters a Zero-gated resource, the payment is automatic and transparent.</p>
+
+<h3>HTTP (x402) Flow</h3>
+<ol>
+  <li><strong>Request:</strong> Agent sends a normal HTTP request to the endpoint.</li>
+  <li><strong>402 Response:</strong> Server returns HTTP 402 with <code>x-402-amount</code>, <code>x-402-address</code>, and <code>x-402-network: "zero"</code>.</li>
+  <li><strong>Budget Check:</strong> Agent SDK checks the requested amount against its per-call and per-hour spending limits.</li>
+  <li><strong>Payment:</strong> If within budget, SDK sends a Zero transfer to the provided address.</li>
+  <li><strong>Retry:</strong> SDK retries the original request with <code>X-Zero-Receipt: &lt;tx_hash&gt;</code> header.</li>
+  <li><strong>Content:</strong> Server verifies receipt on-chain (&lt;500ms) and serves the response.</li>
+</ol>
+
+<h3>MCP Flow</h3>
+<ol>
+  <li><strong>List Tools:</strong> Agent calls <code>tools/list</code> and sees <code>zero_price</code> in each tool's metadata.</li>
+  <li><strong>Call Tool:</strong> Agent invokes the tool. If no payment is attached, the server returns <code>payment_required</code>.</li>
+  <li><strong>Auto-Pay:</strong> The Zero MCP client handler detects the payment request, sends Z, and retries with the tx hash.</li>
+  <li><strong>Result:</strong> Server verifies payment and returns the tool result.</li>
+</ol>
+
+<h3>Agent Configuration</h3>
+<pre data-lang="python"><code><span class="kw">from</span> zero <span class="kw">import</span> Wallet
+<span class="kw">from</span> zero.spending <span class="kw">import</span> SpendingPolicy
+
+wallet = Wallet.<span class="fn">from_env</span>()
+
+<span class="cm"># Configure spending limits for autonomous operation</span>
+policy = <span class="fn">SpendingPolicy</span>(
+    max_per_call=<span class="num">25</span>,       <span class="cm"># 0.25 Z max per single payment</span>
+    max_per_minute=<span class="num">100</span>,    <span class="cm"># 1.00 Z max per minute</span>
+    max_per_hour=<span class="num">1000</span>,     <span class="cm"># 10.00 Z max per hour</span>
+    max_per_day=<span class="num">10000</span>,     <span class="cm"># 100.00 Z ($1.00) max per day</span>
+)
+
+wallet.<span class="fn">set_policy</span>(policy)
+<span class="cm"># Agent now operates autonomously within these bounds</span></code></pre>
+
+<div class="card card-amber">
+  <div class="card-title">Zero-Sum for Providers</div>
+  <p style="margin-bottom:0;">You don't need to know anything about your users. No accounts, no OAuth, no rate limiting. Set a price, verify receipts, serve content. The network handles identity (public keys), payment (Z transfers), and settlement (&lt;500ms finality). You just build your service.</p>
 </div>
 </section>
 
