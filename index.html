@@ -821,8 +821,9 @@ tr:hover td {
   <tr><td>Peg</td><td>1 Z = $0.01 USD (1 penny)</td></tr>
   <tr><td>Decimal places</td><td>2</td></tr>
   <tr><td>Smallest unit</td><td>0.01 Z = $0.0001</td></tr>
+  <tr><td>Min transaction</td><td>0.01 Z + 0.01 Z fee = 0.02 Z ($0.0002)</td></tr>
   <tr><td>Max transaction</td><td>25 Z ($0.25)</td></tr>
-  <tr><td>Transaction fee</td><td>0.01 Z (flat)</td></tr>
+  <tr><td>Transaction fee</td><td>0.01 Z (flat, added to amount)</td></tr>
   <tr><td>Backing</td><td>1:1 USDC/USDT in bridge vaults</td></tr>
   <tr><td>Bridge rate</td><td>1 USDC = 100 Z</td></tr>
 </table>
@@ -1236,7 +1237,7 @@ wallet = ChatWallet.<span class="fn">create</span>()
 <span class="cm"># Agent pays for tool calls automatically</span>
 result = <span class="kw">await</span> wallet.<span class="fn">pay_and_call</span>(
     tool_address=<span class="str">"zr_search_provider"</span>,
-    amount=<span class="num">1</span>,  <span class="cm"># 0.01 Z per call</span>
+    amount=<span class="num">1</span>,  <span class="cm"># 0.01 Z per call (+ 0.01 Z fee = 0.02 Z total)</span>
     endpoint=<span class="str">"https://api.example.com/search"</span>,
     params={<span class="str">"q"</span>: <span class="str">"machine learning papers"</span>}
 )</code></pre>
@@ -1777,7 +1778,7 @@ result = <span class="kw">await</span> client.<span class="fn">call_tool</span>(
   <li>Fee market or auction mechanism</li>
 </ul>
 
-<p>Every transaction costs exactly 0.01 Z. The fee is deducted from the sender's balance in addition to the transfer amount. Total debit: <code>amount + 0.01 Z</code>. Collected fees are distributed each epoch: <strong>50% to validators</strong> (proportional to stake), <strong>35% to bridge reserve</strong> (vault contract gas), and <strong>15% to protocol reserve</strong> (emergency fund, development).</p>
+<p>Every transaction costs exactly 0.01 Z. The fee is deducted from the sender's balance in addition to the transfer amount. Total debit: <code>amount + 0.01 Z</code>. The smallest possible transaction is 0.01 Z + 0.01 Z fee = <strong>0.02 Z ($0.0002)</strong>. Collected fees are distributed each epoch: <strong>50% to validators</strong> (proportional to stake), <strong>35% to bridge reserve</strong> (vault contract gas), and <strong>15% to protocol reserve</strong> (emergency fund, development).</p>
 
 <div class="card card-cyan">
   <div class="card-title">Predictable costs</div>
