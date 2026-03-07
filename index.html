@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zero Network - Documentation</title>
+<meta name="description" content="Technical documentation for the Zero Network - a micropayment blockchain for AI agents and machines.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0a;
+  --card: #0f0f0f;
+  --border: #1a1a1a;
+  --green: #00ff41;
+  --cyan: #00d4ff;
+  --amber: #ffb000;
+  --red: #ff4444;
+  --text: #c0c0c0;
+  --dim: #606060;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --sidebar-w: 280px;
+  --nav-h: 56px;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 24px);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCANLINE OVERLAY
+   ═══════════════════════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   GRID BACKGROUND
+   ═══════════════════════════════════════════════════════ */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(0, 255, 65, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 65, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOP NAVIGATION BAR
+   ═══════════════════════════════════════════════════════ */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--nav-h);
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 1000;
+  backdrop-filter: blur(12px);
+  background: rgba(15, 15, 15, 0.92);
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.navbar-brand .logo-z {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--green);
+  text-shadow: 0 0 12px rgba(0, 255, 65, 0.4);
+  letter-spacing: -1px;
+}
+
+.navbar-brand .logo-text {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.navbar-brand .logo-text .highlight {
+  color: var(--text);
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  list-style: none;
+}
+
+.navbar-links a {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--dim);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: color 0.2s;
+}
+
+.navbar-links a:hover {
+  color: var(--green);
+}
+
+.navbar-links a.active {
+  color: var(--green);
+}
+
+.navbar-links .sep {
+  color: var(--border);
+  user-select: none;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--green);
+  font-size: 20px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════════════════ */
+.layout {
+  display: flex;
+  margin-top: var(--nav-h);
+  min-height: calc(100vh - var(--nav-h));
+}
+
+/* ═══════════════════════════════════════════════════════
+   SIDEBAR
+   ═══════════════════════════════════════════════════════ */
+.sidebar {
+  position: fixed;
+  top: var(--nav-h);
+  left: 0;
+  width: var(--sidebar-w);
+  height: calc(100vh - var(--nav-h));
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px 0;
+  z-index: 500;
+  transition: transform 0.3s ease;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.sidebar-section {
+  margin-bottom: 8px;
+}
+
+.sidebar-heading {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 12px 24px 6px;
+  user-select: none;
+}
+
+.sidebar-link {
+  display: block;
+  padding: 6px 24px 6px 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  text-decoration: none;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  opacity: 0.7;
+}
+
+.sidebar-link:hover {
+  color: var(--green);
+  background: rgba(0, 255, 65, 0.03);
+  border-left-color: rgba(0, 255, 65, 0.3);
+  opacity: 1;
+}
+
+.sidebar-link.active {
+  color: var(--green);
+  border-left-color: var(--green);
+  background: rgba(0, 255, 65, 0.05);
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN CONTENT
+   ═══════════════════════════════════════════════════════ */
+.content {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 40px 48px 80px;
+  max-width: 900px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPOGRAPHY
+   ═══════════════════════════════════════════════════════ */
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  color: #e0e0e0;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-top: 56px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  color: #e0e0e0;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 36px;
+  margin-bottom: 12px;
+  color: var(--cyan);
+}
+
+h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 8px;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+p {
+  margin-bottom: 16px;
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--green);
+  text-decoration: underline;
+}
+
+strong {
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+em {
+  color: var(--amber);
+  font-style: normal;
+}
+
+ul, ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+li::marker {
+  color: var(--dim);
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION ANCHORS
+   ═══════════════════════════════════════════════════════ */
+.section {
+  padding-top: 8px;
+}
+
+.section + .section {
+  margin-top: 32px;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 48px 0 16px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CODE BLOCKS
+   ═══════════════════════════════════════════════════════ */
+code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--green);
+}
+
+pre {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  position: relative;
+}
+
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+pre::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* syntax highlighting classes */
+.kw { color: var(--cyan); }        /* keywords */
+.str { color: var(--green); }      /* strings */
+.fn { color: var(--amber); }       /* functions */
+.num { color: var(--red); }        /* numbers */
+.cm { color: var(--dim); }         /* comments */
+.tp { color: #c792ea; }           /* types */
+.op { color: var(--text); }        /* operators */
+.pr { color: var(--cyan); }        /* property / decorator */
+
+/* ═══════════════════════════════════════════════════════
+   INFO / WARNING CARDS
+   ═══════════════════════════════════════════════════════ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.card-green {
+  border-left: 3px solid var(--green);
+}
+
+.card-cyan {
+  border-left: 3px solid var(--cyan);
+}
+
+.card-amber {
+  border-left: 3px solid var(--amber);
+}
+
+.card-red {
+  border-left: 3px solid var(--red);
+}
+
+.card-title {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+
+.card-green .card-title { color: var(--green); }
+.card-cyan .card-title { color: var(--cyan); }
+.card-amber .card-title { color: var(--amber); }
+.card-red .card-title { color: var(--red); }
+
+/* ═══════════════════════════════════════════════════════
+   DATA TABLE
+   ═══════════════════════════════════════════════════════ */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+th {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--dim);
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+tr:hover td {
+  background: rgba(0, 255, 65, 0.02);
+}
+
+/* ═══════════════════════════════════════════════════════
+   BADGE
+   ═══════════════════════════════════════════════════════ */
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid;
+}
+
+.badge-green { color: var(--green); border-color: var(--green); background: rgba(0,255,65,0.08); }
+.badge-cyan { color: var(--cyan); border-color: var(--cyan); background: rgba(0,212,255,0.08); }
+.badge-amber { color: var(--amber); border-color: var(--amber); background: rgba(255,176,0,0.08); }
+
+/* ═══════════════════════════════════════════════════════
+   STRUCT / FIELD DIAGRAMS
+   ═══════════════════════════════════════════════════════ */
+.struct-table {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.struct-table td:first-child {
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+.struct-table td:nth-child(2) {
+  color: var(--dim);
+  text-align: center;
+}
+
+.struct-table td:last-child {
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PHASE / ROADMAP
+   ═══════════════════════════════════════════════════════ */
+.phase-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  position: relative;
+  padding-left: 40px;
+}
+
+.phase-card::before {
+  content: attr(data-phase);
+  position: absolute;
+  left: 14px;
+  top: 22px;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 2px;
+}
+
+.phase-card h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FORMULA
+   ═══════════════════════════════════════════════════════ */
+.formula {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  text-align: center;
+  padding: 16px;
+  margin: 16px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════ */
+.footer {
+  margin-top: 80px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: var(--nav-h);
+    left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 499;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  .content {
+    margin-left: 0;
+    padding: 28px 20px 60px;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .navbar-links {
+    display: none;
+  }
+
+  h1 { font-size: 24px; }
+  h2 { font-size: 20px; }
+  h3 { font-size: 16px; }
+}
+
+@media (max-width: 600px) {
+  .content { padding: 20px 16px 60px; }
+  pre { padding: 14px; font-size: 12px; }
+  table { font-size: 11px; }
+  th, td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     NAVIGATION BAR
+     ═══════════════════════════════════════════════════════ -->
+<nav class="navbar">
+  <a href="https://zzero.net" class="navbar-brand">
+    <span class="logo-z">Z</span>
+    <span class="logo-text"><span class="highlight">ZERO</span> network</span>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="https://zzero.net">Home</a></li>
+    <li><span class="sep">|</span></li>
+    <li><a href="https://docs.zzero.net" class="active">Docs</a></li>
+    <li><span class="sep">|</span></li>
+    <li><a href="https://explorer.zzero.net">Explorer</a></li>
+    <li><span class="sep">|</span></li>
+    <li><a href="https://mcp.zzero.net">MCP</a></li>
+  </ul>
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+</nav>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SIDEBAR
+     ═══════════════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Overview</div>
+    <a href="#what-is-zero" class="sidebar-link">What is Zero</a>
+    <a href="#why-zero-exists" class="sidebar-link">Why Zero Exists</a>
+    <a href="#design-principles" class="sidebar-link">Design Principles</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Token</div>
+    <a href="#the-z-token" class="sidebar-link">The Z Token</a>
+    <a href="#bridge-flow" class="sidebar-link">Bridge Flow</a>
+    <a href="#stablecoin-backing" class="sidebar-link">Stablecoin Backing</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Architecture</div>
+    <a href="#block-lattice" class="sidebar-link">Block-Lattice Account Model</a>
+    <a href="#transaction-format" class="sidebar-link">Transaction Format (100 bytes)</a>
+    <a href="#account-state" class="sidebar-link">Account State (48 bytes)</a>
+    <a href="#consensus" class="sidebar-link">Consensus (DAG BFT)</a>
+    <a href="#storage-pruning" class="sidebar-link">Storage &amp; Pruning</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Vault &amp; Bridge</div>
+    <a href="#vault-architecture" class="sidebar-link">Vault Architecture</a>
+    <a href="#deposit-flow" class="sidebar-link">Deposit Flow (Mint Z)</a>
+    <a href="#withdrawal-flow" class="sidebar-link">Withdrawal Flow (Burn Z)</a>
+    <a href="#attestation-layer" class="sidebar-link">Attestation Layer</a>
+    <a href="#supported-chains" class="sidebar-link">Supported Chains</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">SDK &amp; Integration</div>
+    <a href="#python-sdk" class="sidebar-link">Python SDK</a>
+    <a href="#javascript-sdk" class="sidebar-link">JavaScript SDK</a>
+    <a href="#rust-sdk" class="sidebar-link">Rust SDK</a>
+    <a href="#environment-pattern" class="sidebar-link">Environment Pattern</a>
+    <a href="#chat-wallet" class="sidebar-link">Chat Wallet</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">x402 Protocol</div>
+    <a href="#how-x402-works" class="sidebar-link">How x402 Works</a>
+    <a href="#server-middleware" class="sidebar-link">Server Middleware</a>
+    <a href="#client-auto-pay" class="sidebar-link">Client Auto-Pay</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">MCP Integration</div>
+    <a href="#mcp-server-payments" class="sidebar-link">MCP Server Payments</a>
+    <a href="#mcp-client" class="sidebar-link">MCP Client</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Validators</div>
+    <a href="#running-a-validator" class="sidebar-link">Running a Validator</a>
+    <a href="#hardware-requirements" class="sidebar-link">Hardware Requirements</a>
+    <a href="#economics" class="sidebar-link">Economics</a>
+    <a href="#staking" class="sidebar-link">Staking</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">API Reference</div>
+    <a href="#api-overview" class="sidebar-link">Core Endpoints</a>
+    <a href="#api-send" class="sidebar-link">Send</a>
+    <a href="#api-gettransfer" class="sidebar-link">GetTransfer</a>
+    <a href="#api-gethistory" class="sidebar-link">GetHistory</a>
+    <a href="#api-getbalance" class="sidebar-link">GetBalance</a>
+    <a href="#api-getaccount" class="sidebar-link">GetAccount</a>
+    <a href="#api-bridgein" class="sidebar-link">BridgeIn</a>
+    <a href="#api-bridgeout" class="sidebar-link">BridgeOut</a>
+    <a href="#api-getbridgestatus" class="sidebar-link">GetBridgeStatus</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Network Parameters</div>
+    <a href="#fee-structure" class="sidebar-link">Fee Structure</a>
+    <a href="#limits" class="sidebar-link">Limits</a>
+    <a href="#security-model" class="sidebar-link">Security Model</a>
+  </div>
+
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════
+     MAIN CONTENT
+     ═══════════════════════════════════════════════════════ -->
+<div class="layout">
+<main class="content">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     OVERVIEW
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="what-is-zero">
+<h1>Zero Network Documentation</h1>
+<p>Technical reference for the Zero micropayment blockchain -- purpose-built for AI agents, machines, and the protocols that connect them.</p>
+
+<div class="card card-green">
+  <div class="card-title">What is Zero?</div>
+  <p style="margin-bottom:0;">Zero is a high-throughput, low-fee blockchain designed for <strong>machine-to-machine micropayments</strong>. It processes sub-cent transactions at massive scale, letting AI agents pay for APIs, tools, data feeds, and compute -- autonomously, in real time.</p>
+</div>
+
+<p>Every transaction on Zero costs a flat <code>0.01 Z</code> ($0.0001 USD). The token is backed 1:1 by stablecoins locked in auditable bridge vault contracts. There is no speculative float, no inflationary emission schedule, no governance token. Zero exists to move money -- small amounts, very fast, between machines.</p>
+
+<p>The network is implemented in <strong>Rust</strong> from scratch (not a fork), using a block-lattice account model inspired by Nano, with a leaderless DAG-based asynchronous BFT consensus layer inspired by Mysticeti and Lachesis. The result is a system that achieves deterministic finality in milliseconds, stores only the latest state (not unbounded history), and fits a complete transaction into <strong>100 bytes</strong>.</p>
+</section>
+
+<section class="section" id="why-zero-exists">
+<h2>Why Zero Exists</h2>
+<p>Existing payment rails fail the machine economy in several ways:</p>
+<ul>
+  <li><strong>Credit cards</strong> have minimum charges, require human identity, and take days to settle.</li>
+  <li><strong>Ethereum and L2s</strong> are too expensive for sub-cent payments. Even at $0.001 per transaction, the gas cost exceeds the payment amount for a 1-cent API call.</li>
+  <li><strong>Solana and fast L1s</strong> have variable fees and are optimized for DeFi, not for deterministic micropayment workloads.</li>
+  <li><strong>Lightning Network</strong> requires channel management and online receivers -- impractical for ephemeral AI agents.</li>
+  <li><strong>Stablecoins on L2s</strong> still require bridging, nonce management, and fee estimation that adds complexity for automated systems.</li>
+</ul>
+<p>Zero solves this by being <em>radically simple</em>. One token, one fee, one purpose. A 100-byte transaction, a 48-byte account. No smart contracts, no virtual machine, no ERC-20 token standards. Just value transfer, as fast as the network can gossip it.</p>
+</section>
+
+<section class="section" id="design-principles">
+<h2>Design Principles</h2>
+<ol>
+  <li><strong>Machine-first.</strong> The protocol is designed for agents and programs, not human wallet UIs. SDK ergonomics prioritize programmatic access.</li>
+  <li><strong>Deterministic cost.</strong> Every transaction costs exactly 0.01 Z. No gas auctions, no priority fees, no MEV.</li>
+  <li><strong>Stable value.</strong> 1 Z = 1 penny. The token is a unit of account, not a speculative asset.</li>
+  <li><strong>Minimal state.</strong> Account state is 48 bytes. Transaction records are pruned via ring buffer. Validator storage is bounded forever.</li>
+  <li><strong>No smart contracts.</strong> Zero does one thing: transfer value. This constraint enables extreme optimization.</li>
+  <li><strong>Stablecoin-backed.</strong> Every Z in circulation has a corresponding cent of USDC or USDT locked in an on-chain vault.</li>
+</ol>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     TOKEN
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="the-z-token">
+<h2>The Z Token</h2>
+<p>Z is the sole token on the Zero network. It is a <strong>value-transfer token</strong> with no governance utility, no staking reward emission, and no speculative mechanics.</p>
+
+<table>
+  <tr><th>Property</th><th>Value</th></tr>
+  <tr><td>Symbol</td><td><code>Z</code></td></tr>
+  <tr><td>Peg</td><td>1 Z = $0.01 USD (1 penny)</td></tr>
+  <tr><td>Decimal places</td><td>2</td></tr>
+  <tr><td>Smallest unit</td><td>0.01 Z = $0.0001</td></tr>
+  <tr><td>Max transaction</td><td>25 Z ($0.25)</td></tr>
+  <tr><td>Transaction fee</td><td>0.01 Z (flat)</td></tr>
+  <tr><td>Backing</td><td>1:1 USDC/USDT in bridge vaults</td></tr>
+  <tr><td>Bridge rate</td><td>1 USDC = 100 Z</td></tr>
+</table>
+
+<div class="card card-amber">
+  <div class="card-title">Why pennies?</div>
+  <p style="margin-bottom:0;">Machines think in integers. By making the base unit a penny and using only 2 decimal places, all arithmetic is exact u32 integer math. No floating point, no rounding errors, no wei/gwei/ether unit confusion. <code>amount: 10</code> means 10 Z means $0.10. Always.</p>
+</div>
+</section>
+
+<section class="section" id="bridge-flow">
+<h2>Bridge Flow</h2>
+<p>Z tokens are minted and burned through the bridge vault system. There is no other way to create or destroy Z.</p>
+
+<h3>Minting (Deposit)</h3>
+<ol>
+  <li>User deposits USDC or USDT to the vault contract on a supported chain (Ethereum, Solana, Arbitrum, Base).</li>
+  <li>Validators observe and attest to the deposit (2/3+ threshold).</li>
+  <li>Once attested, the equivalent Z is minted to the user's Zero account.</li>
+  <li>Conversion: <code>1 USDC = 100 Z</code>.</li>
+</ol>
+
+<h3>Burning (Withdrawal)</h3>
+<ol>
+  <li>User initiates a BridgeOut transaction on Zero, specifying destination chain, token (USDC/USDT), and destination address.</li>
+  <li>The Z is burned on the Zero network.</li>
+  <li>Validators attest to the burn.</li>
+  <li>Once attested, the vault contract releases the equivalent stablecoin to the destination address.</li>
+</ol>
+
+<div class="formula">1 USDC &harr; 100 Z &harr; $1.00</div>
+</section>
+
+<section class="section" id="stablecoin-backing">
+<h2>Stablecoin Backing</h2>
+<p>The fundamental invariant of the Zero network:</p>
+
+<div class="formula">total_Z_supply == 100 &times; total_stablecoins_locked</div>
+
+<p>This invariant is enforced at the protocol level. Z cannot be minted without a corresponding stablecoin deposit, and stablecoins cannot be released without a corresponding Z burn. Validators enforce this invariant as part of consensus -- any block that violates it is rejected.</p>
+
+<p>Supported backing assets:</p>
+<ul>
+  <li><strong>USDC</strong> (Circle) -- primary backing asset, available on all supported chains</li>
+  <li><strong>USDT</strong> (Tether) -- secondary backing asset, Phase 2 rollout</li>
+</ul>
+
+<p>The vault contracts are simple escrow contracts with no admin keys, no upgrade proxies, and no emergency withdrawal functions. They do one thing: hold stablecoins and release them when validators attest to a valid burn on Zero.</p>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     ARCHITECTURE
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="block-lattice">
+<h2>Block-Lattice Account Model</h2>
+<p>Zero uses a <strong>block-lattice</strong> architecture, where each account maintains its own chain of transactions. This design, inspired by <a href="https://nano.org" target="_blank" rel="noopener">Nano</a>, enables several key properties:</p>
+<ul>
+  <li><strong>Parallelism.</strong> Transactions on different accounts are independent and can be processed concurrently without coordination.</li>
+  <li><strong>Minimal contention.</strong> There is no global transaction ordering bottleneck. Each account's nonce provides local ordering.</li>
+  <li><strong>Compact state.</strong> Only the latest account state (balance, nonce, head hash) needs to be stored -- not the full history.</li>
+</ul>
+<p>Each account is identified by an <strong>Ed25519 public key</strong> (32 bytes). The account's "chain" is a sequence of transfers, each linked to the previous by the <code>head</code> hash (a BLAKE3 digest of the previous transfer).</p>
+
+<div class="card card-cyan">
+  <div class="card-title">Nano vs. Zero</div>
+  <p style="margin-bottom:0;">While inspired by Nano's lattice structure, Zero diverges significantly in consensus (leaderless DAG aBFT vs. Open Representative Voting), pruning (ring buffer vs. optional), and scope (micropayments-only vs. general value transfer). Zero is a ground-up Rust implementation, not a Nano fork.</p>
+</div>
+</section>
+
+<section class="section" id="transaction-format">
+<h2>Transaction Format</h2>
+<p>Every Zero transaction is exactly <strong>100 bytes</strong>. No variable-length fields, no optional extensions, no metadata. This fixed size enables aggressive optimization in serialization, networking, and storage.</p>
+
+<pre data-lang="rust"><code><span class="kw">struct</span> <span class="tp">ZeroTransfer</span> {
+    <span class="pr">from</span>:      [<span class="num">32</span> <span class="tp">bytes</span>]  <span class="cm">// Ed25519 public key</span>
+    <span class="pr">to</span>:        [<span class="num">32</span> <span class="tp">bytes</span>]  <span class="cm">// Ed25519 public key</span>
+    <span class="pr">amount</span>:    [<span class="num">4</span> <span class="tp">bytes</span>]   <span class="cm">// u32, penny units</span>
+    <span class="pr">nonce</span>:     [<span class="num">4</span> <span class="tp">bytes</span>]   <span class="cm">// u32, monotonic counter</span>
+    <span class="pr">signature</span>: [<span class="num">28</span> <span class="tp">bytes</span>]  <span class="cm">// Ed25519 truncated</span>
+}</code></pre>
+
+<table class="struct-table">
+  <tr><th>Field</th><th>Size</th><th>Description</th></tr>
+  <tr><td><code>from</code></td><td>32 bytes</td><td>Sender's Ed25519 public key. Serves as the account identifier.</td></tr>
+  <tr><td><code>to</code></td><td>32 bytes</td><td>Recipient's Ed25519 public key.</td></tr>
+  <tr><td><code>amount</code></td><td>4 bytes</td><td>Transfer amount in penny units (u32). Max value: 2500 (25 Z).</td></tr>
+  <tr><td><code>nonce</code></td><td>4 bytes</td><td>Monotonically increasing counter. Prevents replay attacks.</td></tr>
+  <tr><td><code>signature</code></td><td>28 bytes</td><td>Truncated Ed25519 signature. 224 bits provide sufficient security for micropayment values.</td></tr>
+</table>
+
+<div class="card card-amber">
+  <div class="card-title">Why 28-byte signatures?</div>
+  <p style="margin-bottom:0;">Standard Ed25519 signatures are 64 bytes. Zero truncates to 28 bytes (224 bits). For a max-value 25 Z ($0.25) transaction, 224-bit signature security is astronomically sufficient -- brute-forcing it would cost many orders of magnitude more than the maximum possible gain. This saves 36 bytes per transaction, which at billions of daily transactions represents significant bandwidth and storage savings.</p>
+</div>
+</section>
+
+<section class="section" id="account-state">
+<h2>Account State</h2>
+<p>Each account on Zero is represented by exactly <strong>48 bytes</strong> of state:</p>
+
+<pre data-lang="rust"><code><span class="kw">struct</span> <span class="tp">Account</span> {
+    <span class="pr">balance</span>:  [<span class="num">4</span> <span class="tp">bytes</span>]   <span class="cm">// u32</span>
+    <span class="pr">nonce</span>:    [<span class="num">4</span> <span class="tp">bytes</span>]   <span class="cm">// u32</span>
+    <span class="pr">head</span>:     [<span class="num">32</span> <span class="tp">bytes</span>]  <span class="cm">// BLAKE3 hash</span>
+    <span class="pr">flags</span>:    [<span class="num">8</span> <span class="tp">bytes</span>]   <span class="cm">// reserved</span>
+}</code></pre>
+
+<table class="struct-table">
+  <tr><th>Field</th><th>Size</th><th>Description</th></tr>
+  <tr><td><code>balance</code></td><td>4 bytes</td><td>Current balance in penny units (u32). Max: ~42,949 Z ($429.49).</td></tr>
+  <tr><td><code>nonce</code></td><td>4 bytes</td><td>Next expected nonce. Incremented on each outgoing transfer.</td></tr>
+  <tr><td><code>head</code></td><td>32 bytes</td><td>BLAKE3 hash of the most recent transfer involving this account. Links the account chain.</td></tr>
+  <tr><td><code>flags</code></td><td>8 bytes</td><td>Reserved for future use (frozen status, account type, etc.).</td></tr>
+</table>
+
+<p>With 48 bytes per account, <strong>one billion accounts</strong> require approximately 48 GB of state. Combined with the transaction ring buffer, total validator storage remains bounded at <strong>50-110 GB</strong> regardless of network age.</p>
+</section>
+
+<section class="section" id="consensus">
+<h2>Consensus: Leaderless DAG aBFT</h2>
+<p>Zero uses a <strong>leaderless DAG-based asynchronous Byzantine Fault Tolerant</strong> consensus protocol, drawing from the designs of <a href="https://arxiv.org/abs/2310.14821" target="_blank" rel="noopener">Mysticeti</a> and <a href="https://arxiv.org/abs/2003.11895" target="_blank" rel="noopener">Lachesis</a>.</p>
+
+<h3>Key Properties</h3>
+<ul>
+  <li><strong>Leaderless.</strong> No single validator is responsible for block production. All validators propose transaction batches concurrently.</li>
+  <li><strong>DAG structure.</strong> Validator proposals form a directed acyclic graph, where each proposal references multiple previous proposals.</li>
+  <li><strong>Asynchronous BFT.</strong> Consensus is reached without timing assumptions. The protocol is safe under arbitrary network delays and tolerates up to 1/3 Byzantine validators.</li>
+  <li><strong>Deterministic finality.</strong> Once a transaction is included in a committed DAG vertex, it is final. No probabilistic confirmation, no chain reorganizations.</li>
+</ul>
+
+<h3>Throughput</h3>
+<table>
+  <tr><th>Phase</th><th>Configuration</th><th>Target TPS</th></tr>
+  <tr><td>Phase 1</td><td>Single shard</td><td>100,000+</td></tr>
+  <tr><td>Phase 2</td><td>Multi-shard</td><td>1,000,000+</td></tr>
+  <tr><td>Phase 3</td><td>Global sharding</td><td>10,000,000+</td></tr>
+</table>
+</section>
+
+<section class="section" id="storage-pruning">
+<h2>Storage &amp; Pruning</h2>
+<p>Zero uses a <strong>ring buffer</strong> for transaction storage. Instead of growing unboundedly like traditional blockchains, the transfer log overwrites the oldest entries once the buffer is full.</p>
+
+<h3>Why This Works</h3>
+<p>Zero is a payment network, not a smart contract platform. The only state that matters is each account's current balance, nonce, and head hash (48 bytes). Historical transactions are useful for auditing and debugging, but they are not required for consensus or state validation.</p>
+
+<h3>Storage Budget</h3>
+<table>
+  <tr><th>Component</th><th>Size</th></tr>
+  <tr><td>Account state (1B accounts)</td><td>~48 GB</td></tr>
+  <tr><td>Transaction ring buffer</td><td>~50 GB (configurable)</td></tr>
+  <tr><td>DAG metadata &amp; indices</td><td>~10 GB</td></tr>
+  <tr><td><strong>Total (validator)</strong></td><td><strong>~50-110 GB forever</strong></td></tr>
+</table>
+
+<div class="card card-green">
+  <div class="card-title">Never bloats</div>
+  <p style="margin-bottom:0;">Unlike Ethereum (~1.5 TB and growing), Solana (~150 TB with full history), or Bitcoin (~600 GB), a Zero validator's storage requirements are <strong>bounded forever</strong>. A validator that joins the network in 2030 needs the same disk space as one that joined at genesis.</p>
+</div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     VAULT & BRIDGE
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="vault-architecture">
+<h2>Vault Architecture</h2>
+<p>The vault system is Zero's bridge to the broader crypto ecosystem. It consists of <strong>smart contracts deployed on supported chains</strong> that hold stablecoins (USDC, USDT) as backing for Z tokens.</p>
+
+<h3>Design Goals</h3>
+<ul>
+  <li><strong>Minimal attack surface.</strong> Vault contracts are pure escrow -- no admin functions, no upgrade mechanisms, no emergency withdrawals.</li>
+  <li><strong>Validator-attested.</strong> Deposits and withdrawals require 2/3+ validator attestations, using the same consensus mechanism that secures the Zero network itself.</li>
+  <li><strong>Multi-chain.</strong> Vaults are deployed on multiple chains to meet users where they are.</li>
+</ul>
+
+<h3>Invariant Enforcement</h3>
+<p>The core safety property is checked at every consensus round:</p>
+<div class="formula">total_Z_supply == 100 &times; total_stablecoins_locked</div>
+<p>Any proposed state transition that would violate this invariant is rejected by honest validators.</p>
+</section>
+
+<section class="section" id="deposit-flow">
+<h2>Deposit Flow (Mint Z)</h2>
+
+<h4>Step 1: Deposit stablecoins</h4>
+<p>The user sends USDC or USDT to the vault contract on a supported chain. The deposit transaction includes a memo field containing the user's Zero public key (the account that will receive the minted Z).</p>
+
+<h4>Step 2: Validator observation</h4>
+<p>Zero validators monitor all supported chains for vault deposits. Each validator independently verifies the deposit transaction on the source chain.</p>
+
+<h4>Step 3: Attestation</h4>
+<p>Once a validator confirms the deposit, it broadcasts an attestation to the Zero network. When 2/3+ of validators (by stake weight) have attested to the same deposit, the mint is authorized.</p>
+
+<h4>Step 4: Mint</h4>
+<p>The consensus layer mints the equivalent Z to the specified account. For 1 USDC deposited, 100 Z is minted.</p>
+
+<div class="card card-cyan">
+  <div class="card-title">Finality modes</div>
+  <p style="margin-bottom:0;"><strong>Fast finality</strong> is used for small deposits (configurable threshold). Validators accept the deposit after a reduced number of source-chain confirmations. <strong>Hard finality</strong> is used for large deposits, waiting for full source-chain finality before attesting.</p>
+</div>
+</section>
+
+<section class="section" id="withdrawal-flow">
+<h2>Withdrawal Flow (Burn Z)</h2>
+
+<h4>Step 1: Initiate BridgeOut</h4>
+<p>The user sends a <code>BridgeOut</code> transaction on Zero, specifying:</p>
+<ul>
+  <li>Destination chain (e.g., Ethereum, Solana)</li>
+  <li>Token type (USDC or USDT)</li>
+  <li>Destination address on the target chain</li>
+  <li>Amount of Z to burn</li>
+</ul>
+
+<h4>Step 2: Burn</h4>
+<p>The Z is burned on the Zero network, reducing total supply.</p>
+
+<h4>Step 3: Attestation</h4>
+<p>Validators attest to the burn. When 2/3+ have attested, the release is authorized.</p>
+
+<h4>Step 4: Release</h4>
+<p>The vault contract on the destination chain releases the equivalent stablecoin to the specified address. For 100 Z burned, 1 USDC is released.</p>
+</section>
+
+<section class="section" id="attestation-layer">
+<h2>Attestation Layer</h2>
+<p>The attestation layer is the trust bridge between Zero and external chains. It uses the same validator set and consensus mechanism as the main Zero network.</p>
+
+<h3>Threshold</h3>
+<p>Both deposits (mints) and withdrawals (burns) require attestation from <strong>2/3+ of validators by stake weight</strong>. This threshold matches the BFT assumption of the main consensus protocol -- if 2/3+ of stake is honest, the bridge is secure.</p>
+
+<h3>Validator Responsibilities</h3>
+<ul>
+  <li><strong>Run full nodes</strong> on all supported chains (or use trusted RPC endpoints with verification).</li>
+  <li><strong>Monitor vault contracts</strong> for deposit events.</li>
+  <li><strong>Verify transactions</strong> on source chains before attesting.</li>
+  <li><strong>Sign attestations</strong> using their Zero validator key.</li>
+</ul>
+</section>
+
+<section class="section" id="supported-chains">
+<h2>Supported Chains</h2>
+
+<table>
+  <tr><th>Chain</th><th>Tokens</th><th>Phase</th><th>Status</th></tr>
+  <tr><td>Ethereum</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td>Arbitrum</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td>Base</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td>Solana</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td>Ethereum</td><td>USDT</td><td>Phase 2</td><td><span class="badge badge-amber">Planned</span></td></tr>
+  <tr><td>Solana</td><td>USDT</td><td>Phase 2</td><td><span class="badge badge-amber">Planned</span></td></tr>
+</table>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     SDK & INTEGRATION
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="python-sdk">
+<h2>Python SDK</h2>
+<p>Install the Python SDK:</p>
+<pre data-lang="bash"><code><span class="fn">pip</span> <span class="str">install</span> zero-sdk</code></pre>
+
+<h3>Basic Usage</h3>
+<pre data-lang="python"><code><span class="kw">from</span> zero <span class="kw">import</span> Wallet
+
+<span class="cm"># Load wallet from ZERO_PRIVATE_KEY env var</span>
+w = Wallet.<span class="fn">from_env</span>()
+
+<span class="cm"># Send 10 Z ($0.10) to a recipient</span>
+tx = w.<span class="fn">send</span>(<span class="str">"zr_recipient"</span>, <span class="num">10</span>)
+<span class="fn">print</span>(tx.hash)  <span class="cm"># Transaction hash</span>
+
+<span class="cm"># Check balance</span>
+bal = w.<span class="fn">balance</span>()
+<span class="fn">print</span>(bal)  <span class="cm"># 489.89 Z</span>
+
+<span class="cm"># Get account info</span>
+acct = w.<span class="fn">account</span>()
+<span class="fn">print</span>(acct.nonce)   <span class="cm"># 1042</span>
+<span class="fn">print</span>(acct.head)    <span class="cm"># BLAKE3 hash of last transfer</span></code></pre>
+
+<h3>Transaction History</h3>
+<pre data-lang="python"><code><span class="cm"># Get last 10 transfers</span>
+history = w.<span class="fn">history</span>(limit=<span class="num">10</span>)
+<span class="kw">for</span> tx <span class="kw">in</span> history:
+    <span class="fn">print</span>(<span class="str">f"</span>{tx.direction} {tx.amount} Z <span class="str">-></span> {tx.counterparty}<span class="str">"</span>)</code></pre>
+
+<h3>Bridge Operations</h3>
+<pre data-lang="python"><code><span class="cm"># Deposit: after sending USDC to vault on Ethereum</span>
+mint = w.<span class="fn">bridge_in</span>(
+    source_chain=<span class="str">"ethereum"</span>,
+    token=<span class="str">"usdc"</span>,
+    tx_hash=<span class="str">"0xabc123..."</span>
+)
+<span class="fn">print</span>(mint.status)  <span class="cm"># "pending" -> "confirmed"</span>
+
+<span class="cm"># Withdraw: burn Z and release USDC</span>
+release = w.<span class="fn">bridge_out</span>(
+    dest_chain=<span class="str">"arbitrum"</span>,
+    token=<span class="str">"usdc"</span>,
+    dest_address=<span class="str">"0xdef456..."</span>,
+    amount=<span class="num">500</span>  <span class="cm"># 500 Z = 5 USDC</span>
+)</code></pre>
+</section>
+
+<section class="section" id="javascript-sdk">
+<h2>JavaScript SDK</h2>
+<p>Install the JavaScript SDK:</p>
+<pre data-lang="bash"><code><span class="fn">npm</span> <span class="str">install</span> @zero-network/sdk</code></pre>
+
+<h3>Basic Usage</h3>
+<pre data-lang="javascript"><code><span class="kw">import</span> { Wallet } <span class="kw">from</span> <span class="str">'@zero-network/sdk'</span>;
+
+<span class="cm">// Load wallet from ZERO_PRIVATE_KEY env var</span>
+<span class="kw">const</span> w = Wallet.<span class="fn">fromEnv</span>();
+
+<span class="cm">// Send 10 Z ($0.10)</span>
+<span class="kw">const</span> tx = <span class="kw">await</span> w.<span class="fn">send</span>(<span class="str">'zr_recipient'</span>, <span class="num">10</span>);
+console.<span class="fn">log</span>(tx.hash);
+
+<span class="cm">// Check balance</span>
+<span class="kw">const</span> bal = <span class="kw">await</span> w.<span class="fn">balance</span>();
+console.<span class="fn">log</span>(<span class="str">`Balance: </span>${bal}<span class="str"> Z`</span>);
+
+<span class="cm">// Get transaction history</span>
+<span class="kw">const</span> history = <span class="kw">await</span> w.<span class="fn">history</span>({ limit: <span class="num">10</span> });
+history.<span class="fn">forEach</span>(tx => console.<span class="fn">log</span>(tx));</code></pre>
+
+<h3>Bridge Operations</h3>
+<pre data-lang="javascript"><code><span class="cm">// Deposit: track a USDC deposit</span>
+<span class="kw">const</span> mint = <span class="kw">await</span> w.<span class="fn">bridgeIn</span>({
+  sourceChain: <span class="str">'ethereum'</span>,
+  token: <span class="str">'usdc'</span>,
+  txHash: <span class="str">'0xabc123...'</span>
+});
+
+<span class="cm">// Withdraw: burn Z and release USDC</span>
+<span class="kw">const</span> release = <span class="kw">await</span> w.<span class="fn">bridgeOut</span>({
+  destChain: <span class="str">'base'</span>,
+  token: <span class="str">'usdc'</span>,
+  destAddress: <span class="str">'0xdef456...'</span>,
+  amount: <span class="num">1000</span>  <span class="cm">// 1000 Z = 10 USDC</span>
+});</code></pre>
+</section>
+
+<section class="section" id="rust-sdk">
+<h2>Rust SDK</h2>
+<p>Add the Rust SDK to your <code>Cargo.toml</code>:</p>
+<pre data-lang="toml"><code>[dependencies]
+zero-sdk = <span class="str">"0.1"</span></code></pre>
+
+<h3>Basic Usage</h3>
+<pre data-lang="rust"><code><span class="kw">use</span> zero_sdk::{Wallet, Result};
+
+<span class="kw">fn</span> <span class="fn">main</span>() -> <span class="tp">Result</span>&lt;()&gt; {
+    <span class="cm">// Load from ZERO_PRIVATE_KEY env var</span>
+    <span class="kw">let</span> w = Wallet::<span class="fn">from_env</span>()?;
+
+    <span class="cm">// Send 10 Z</span>
+    <span class="kw">let</span> tx = w.<span class="fn">send</span>(<span class="str">"zr_recipient"</span>, <span class="num">10</span>)?;
+    <span class="fn">println!</span>(<span class="str">"tx: {}"</span>, tx.hash);
+
+    <span class="cm">// Check balance</span>
+    <span class="kw">let</span> bal = w.<span class="fn">balance</span>()?;
+    <span class="fn">println!</span>(<span class="str">"balance: {} Z"</span>, bal);
+
+    <span class="tp">Ok</span>(())
+}</code></pre>
+</section>
+
+<section class="section" id="environment-pattern">
+<h2>Environment Pattern</h2>
+<p>All Zero SDKs follow a consistent <strong>environment-first</strong> pattern. The wallet private key is loaded from the <code>ZERO_PRIVATE_KEY</code> environment variable by default.</p>
+
+<pre data-lang="bash"><code><span class="cm"># Set the private key</span>
+<span class="kw">export</span> ZERO_PRIVATE_KEY=<span class="str">"your_ed25519_private_key_hex"</span>
+
+<span class="cm"># Optional: set a custom RPC endpoint</span>
+<span class="kw">export</span> ZERO_RPC_URL=<span class="str">"https://rpc.zzero.net"</span></code></pre>
+
+<p>This pattern is designed for <strong>machine environments</strong> -- containers, serverless functions, CI/CD pipelines, and AI agent runtimes. No config files, no interactive prompts, no key management UIs. Just an environment variable.</p>
+
+<div class="card card-amber">
+  <div class="card-title">Security note</div>
+  <p style="margin-bottom:0;">Since Zero wallets handle at most a few dollars at a time (max tx: 25 Z = $0.25), the security requirements are fundamentally different from a wallet holding ETH or BTC. Leaking a Zero private key is more like leaking a prepaid coffee card than leaking a bank account. The environment variable pattern reflects this reality.</p>
+</div>
+</section>
+
+<section class="section" id="chat-wallet">
+<h2>Chat Wallet</h2>
+<p>AI agents running in chat contexts (LLM tool-use, MCP servers, chat assistants) can use a <strong>chat wallet</strong> -- a lightweight wallet that lives in the agent's runtime and makes payments on behalf of the user.</p>
+
+<pre data-lang="python"><code><span class="kw">from</span> zero <span class="kw">import</span> ChatWallet
+
+<span class="cm"># Agent creates a chat wallet for a session</span>
+wallet = ChatWallet.<span class="fn">create</span>()
+<span class="fn">print</span>(wallet.address)  <span class="cm"># zr_a1b2c3...</span>
+
+<span class="cm"># User funds it (small amount for the session)</span>
+<span class="cm"># wallet receives 5 Z ($0.05) -- enough for ~500 API calls</span>
+
+<span class="cm"># Agent pays for tool calls automatically</span>
+result = <span class="kw">await</span> wallet.<span class="fn">pay_and_call</span>(
+    tool_address=<span class="str">"zr_search_provider"</span>,
+    amount=<span class="num">1</span>,  <span class="cm"># 0.01 Z per call</span>
+    endpoint=<span class="str">"https://api.example.com/search"</span>,
+    params={<span class="str">"q"</span>: <span class="str">"machine learning papers"</span>}
+)</code></pre>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     x402 PROTOCOL
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="how-x402-works">
+<h2>x402 Protocol</h2>
+<p>x402 is a <strong>machine-native payment protocol</strong> inspired by HTTP 402 (Payment Required). It enables APIs to charge per-request without subscriptions, API keys, or billing infrastructure.</p>
+
+<h3>How It Works</h3>
+<ol>
+  <li><strong>Client</strong> makes a request to a paid API endpoint.</li>
+  <li><strong>Server</strong> responds with HTTP 402 and a payment header containing the price (in Z) and the server's Zero address.</li>
+  <li><strong>Client</strong> makes a Zero payment for the requested amount.</li>
+  <li><strong>Client</strong> retries the request with the transaction hash in a payment header.</li>
+  <li><strong>Server</strong> verifies the payment and serves the response.</li>
+</ol>
+
+<pre data-lang="http"><code><span class="cm">// Step 1: Client request</span>
+<span class="kw">GET</span> <span class="str">/api/search?q=zero+network</span> <span class="tp">HTTP/1.1</span>
+
+<span class="cm">// Step 2: Server responds with payment details</span>
+<span class="kw">HTTP/1.1</span> <span class="num">402</span> <span class="tp">Payment Required</span>
+<span class="pr">X-Zero-Amount</span>: <span class="num">10</span>
+<span class="pr">X-Zero-Address</span>: <span class="str">zr_merchant_abc123</span>
+<span class="pr">X-Zero-Network</span>: <span class="str">zero</span>
+
+<span class="cm">// Step 4: Client retries with payment</span>
+<span class="kw">GET</span> <span class="str">/api/search?q=zero+network</span> <span class="tp">HTTP/1.1</span>
+<span class="pr">X-Zero-Payment</span>: <span class="str">tx_hash_abc123</span>
+
+<span class="cm">// Step 5: Server verifies and responds</span>
+<span class="kw">HTTP/1.1</span> <span class="num">200</span> <span class="tp">OK</span>
+{ <span class="str">"results"</span>: [...] }</code></pre>
+</section>
+
+<section class="section" id="server-middleware">
+<h2>Server Middleware</h2>
+<p>The <code>@paywall</code> decorator turns any API endpoint into a paid endpoint with one line of code:</p>
+
+<pre data-lang="python"><code><span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+<span class="kw">from</span> zero.x402 <span class="kw">import</span> paywall
+
+app = <span class="fn">FastAPI</span>()
+
+<span class="pr">@app.get</span>(<span class="str">"/api/search"</span>)
+<span class="pr">@paywall</span>(amount=<span class="num">10</span>, address=<span class="str">"zr_merchant"</span>)
+<span class="kw">async def</span> <span class="fn">search</span>(q: <span class="tp">str</span>):
+    <span class="kw">return</span> <span class="fn">do_search</span>(q)</code></pre>
+
+<p>The middleware handles:</p>
+<ul>
+  <li>Returning 402 with payment details when no payment is provided</li>
+  <li>Verifying the Zero transaction hash against the expected amount and address</li>
+  <li>Rejecting replayed transaction hashes (each tx can only be used once)</li>
+  <li>Passing the request through to the handler once payment is verified</li>
+</ul>
+
+<h3>Express.js Middleware</h3>
+<pre data-lang="javascript"><code><span class="kw">import</span> { paywall } <span class="kw">from</span> <span class="str">'@zero-network/x402'</span>;
+
+app.<span class="fn">get</span>(<span class="str">'/api/search'</span>,
+  <span class="fn">paywall</span>({ amount: <span class="num">10</span>, address: <span class="str">'zr_merchant'</span> }),
+  <span class="kw">async</span> (req, res) => {
+    <span class="kw">const</span> results = <span class="kw">await</span> <span class="fn">doSearch</span>(req.query.q);
+    res.<span class="fn">json</span>({ results });
+  }
+);</code></pre>
+</section>
+
+<section class="section" id="client-auto-pay">
+<h2>Client Auto-Pay</h2>
+<p>The SDK provides an auto-pay HTTP client that handles the 402 flow automatically:</p>
+
+<pre data-lang="python"><code><span class="kw">from</span> zero.x402 <span class="kw">import</span> AutoPayClient
+<span class="kw">from</span> zero <span class="kw">import</span> Wallet
+
+w = Wallet.<span class="fn">from_env</span>()
+client = <span class="fn">AutoPayClient</span>(wallet=w)
+
+<span class="cm"># This will automatically:</span>
+<span class="cm"># 1. GET the endpoint</span>
+<span class="cm"># 2. Receive 402 with payment details</span>
+<span class="cm"># 3. Pay the requested amount</span>
+<span class="cm"># 4. Retry with the tx hash</span>
+<span class="cm"># 5. Return the final response</span>
+result = <span class="kw">await</span> client.<span class="fn">get</span>(<span class="str">"https://api.example.com/search?q=hello"</span>)
+<span class="fn">print</span>(result.json())</code></pre>
+
+<pre data-lang="javascript"><code><span class="kw">import</span> { AutoPayClient, Wallet } <span class="kw">from</span> <span class="str">'@zero-network/sdk'</span>;
+
+<span class="kw">const</span> w = Wallet.<span class="fn">fromEnv</span>();
+<span class="kw">const</span> client = <span class="kw">new</span> <span class="fn">AutoPayClient</span>({ wallet: w });
+
+<span class="cm">// Automatic 402 handling</span>
+<span class="kw">const</span> result = <span class="kw">await</span> client.<span class="fn">get</span>(<span class="str">'https://api.example.com/search?q=hello'</span>);
+console.<span class="fn">log</span>(result.data);</code></pre>
+
+<div class="card card-green">
+  <div class="card-title">Budget limits</div>
+  <p style="margin-bottom:0;">The auto-pay client supports configurable spending limits: <code>AutoPayClient(wallet=w, max_per_request=25, max_per_minute=100)</code>. This prevents runaway spending from misconfigured APIs or malicious endpoints. Default limits: 25 Z per request, 100 Z per minute.</p>
+</div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     MCP INTEGRATION
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="mcp-server-payments">
+<h2>MCP Server Payments</h2>
+<p>Zero integrates natively with the <strong>Model Context Protocol (MCP)</strong> -- the standard for connecting AI models to external tools and data sources. MCP tool servers can charge per-invocation using Zero.</p>
+
+<h3>Server Implementation</h3>
+<pre data-lang="python"><code><span class="kw">from</span> mcp.server <span class="kw">import</span> Server
+<span class="kw">from</span> zero <span class="kw">import</span> Wallet
+
+server = <span class="fn">Server</span>(<span class="str">"search-provider"</span>)
+wallet = Wallet.<span class="fn">from_env</span>()
+
+<span class="pr">@server.tool</span>(<span class="str">"web_search"</span>)
+<span class="kw">async def</span> <span class="fn">web_search</span>(query: <span class="tp">str</span>, zero_payment: <span class="tp">str</span> = <span class="kw">None</span>):
+    <span class="cm"># No payment provided -- return payment request</span>
+    <span class="kw">if not</span> zero_payment:
+        <span class="kw">return</span> {
+            <span class="str">"error"</span>: <span class="str">"payment_required"</span>,
+            <span class="str">"network"</span>: <span class="str">"zero"</span>,
+            <span class="str">"address"</span>: wallet.address,
+            <span class="str">"amount"</span>: <span class="num">10</span>
+        }
+
+    <span class="cm"># Verify the payment</span>
+    verified = <span class="kw">await</span> wallet.<span class="fn">verify_payment</span>(
+        tx_hash=zero_payment,
+        min_amount=<span class="num">10</span>
+    )
+    <span class="kw">if not</span> verified:
+        <span class="kw">return</span> {<span class="str">"error"</span>: <span class="str">"payment_invalid"</span>}
+
+    <span class="cm"># Payment verified -- serve the request</span>
+    <span class="kw">return</span> {<span class="str">"results"</span>: <span class="kw">await</span> <span class="fn">do_search</span>(query)}</code></pre>
+
+<h3>Payment Flow</h3>
+<ol>
+  <li>AI agent invokes the <code>web_search</code> tool without a payment.</li>
+  <li>Server returns a <code>payment_required</code> response with the price and address.</li>
+  <li>Agent's wallet sends the requested amount to the server's address.</li>
+  <li>Agent retries the tool call with the <code>zero_payment</code> transaction hash.</li>
+  <li>Server verifies the payment on-chain and serves the result.</li>
+</ol>
+
+<p>This creates a <strong>machine-to-machine economy</strong> where AI agents can autonomously discover, pay for, and consume tools without human intervention.</p>
+</section>
+
+<section class="section" id="mcp-client">
+<h2>MCP Client</h2>
+<p>The Zero-aware MCP client handles payment negotiation automatically:</p>
+
+<pre data-lang="python"><code><span class="kw">from</span> mcp.client <span class="kw">import</span> Client
+<span class="kw">from</span> zero.mcp <span class="kw">import</span> ZeroPaymentHandler
+<span class="kw">from</span> zero <span class="kw">import</span> Wallet
+
+wallet = Wallet.<span class="fn">from_env</span>()
+handler = <span class="fn">ZeroPaymentHandler</span>(wallet=wallet)
+
+client = <span class="fn">Client</span>(
+    server_url=<span class="str">"https://mcp.example.com"</span>,
+    payment_handler=handler
+)
+
+<span class="cm"># The client will automatically handle payment_required</span>
+<span class="cm"># responses, pay, and retry -- transparent to the caller</span>
+result = <span class="kw">await</span> client.<span class="fn">call_tool</span>(<span class="str">"web_search"</span>, {
+    <span class="str">"query"</span>: <span class="str">"latest AI research papers"</span>
+})
+<span class="fn">print</span>(result)</code></pre>
+
+<div class="card card-cyan">
+  <div class="card-title">Composability</div>
+  <p style="margin-bottom:0;">An AI agent can chain multiple paid MCP tools in a single reasoning step: search (1 Z) -> fetch page (1 Z) -> summarize (2 Z). Total cost for a complex multi-tool query: 4 Z = $0.04. This is the economic substrate for autonomous AI workflows.</p>
+</div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     VALIDATORS
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="running-a-validator">
+<h2>Running a Validator</h2>
+<p>Zero validators process transactions, participate in consensus, attest to bridge events, and earn 100% of transaction fees.</p>
+
+<h3>Quick Start</h3>
+<pre data-lang="bash"><code><span class="cm"># Install the Zero validator</span>
+<span class="fn">curl</span> -sSf https://install.zzero.net | <span class="fn">sh</span>
+
+<span class="cm"># Generate a validator keypair</span>
+<span class="fn">zero</span> keygen --output validator-key.json
+
+<span class="cm"># Start the validator</span>
+<span class="fn">zero</span> validator start \
+  --key validator-key.json \
+  --rpc-port <span class="num">8545</span> \
+  --p2p-port <span class="num">30300</span></code></pre>
+
+<p>The install script downloads the latest validator binary, verifies its signature, and sets up a systemd service for automatic restarts.</p>
+</section>
+
+<section class="section" id="hardware-requirements">
+<h2>Hardware Requirements</h2>
+
+<table>
+  <tr><th>Component</th><th>Minimum</th><th>Recommended</th></tr>
+  <tr><td>CPU</td><td>4 cores</td><td>8+ cores</td></tr>
+  <tr><td>RAM</td><td>16 GB</td><td>32 GB</td></tr>
+  <tr><td>Storage</td><td>256 GB NVMe</td><td>512 GB NVMe</td></tr>
+  <tr><td>Network</td><td>100 Mbps</td><td>1 Gbps</td></tr>
+</table>
+
+<div class="card card-green">
+  <div class="card-title">Storage never grows</div>
+  <p style="margin-bottom:0;">Because of ring buffer pruning, a 256 GB NVMe drive is sufficient <strong>forever</strong>. You will never need to upgrade storage. The 512 GB recommendation is for headroom and faster I/O from not running near capacity.</p>
+</div>
+</section>
+
+<section class="section" id="economics">
+<h2>Economics</h2>
+<p>Zero validators earn <strong>100% of transaction fees</strong>. There is no foundation take, no protocol treasury, no burn mechanism. Every fee goes to the validator set, distributed proportionally by stake weight.</p>
+
+<h3>Revenue Projections</h3>
+<table>
+  <tr><th>Daily Transactions</th><th>Fee Pool (Daily)</th><th>Per Validator (100 validators)</th></tr>
+  <tr><td>100 million</td><td>$10,000</td><td>$100/day</td></tr>
+  <tr><td>1 billion</td><td>$100,000</td><td>$1,000/day</td></tr>
+  <tr><td>10 billion</td><td>$1,000,000</td><td>$10,000/day</td></tr>
+</table>
+
+<p>At the fee of 0.01 Z ($0.0001) per transaction:</p>
+<div class="formula">daily_revenue = daily_transactions &times; $0.0001</div>
+
+<div class="card card-amber">
+  <div class="card-title">No inflation</div>
+  <p style="margin-bottom:0;">Zero has no block rewards and no token emission. Validator revenue comes exclusively from transaction fees. This means validators are profitable only when the network is actually being used -- aligning incentives with real utility rather than speculative staking yield.</p>
+</div>
+</section>
+
+<section class="section" id="staking">
+<h2>Staking</h2>
+<p>Validators must stake Z tokens to participate in consensus. The stake serves as a sybil resistance mechanism and economic bond against misbehavior.</p>
+
+<h3>Staking Mechanics</h3>
+<ul>
+  <li><strong>Minimum stake:</strong> Determined by governance (initially set by genesis parameters).</li>
+  <li><strong>Stake weight:</strong> Fee distribution and voting power are proportional to stake.</li>
+  <li><strong>Slashing:</strong> Validators that sign conflicting attestations or attempt double-spends have their stake slashed.</li>
+  <li><strong>Unbonding period:</strong> Stake withdrawals have a cooldown period to prevent rapid entry/exit attacks.</li>
+</ul>
+
+<pre data-lang="bash"><code><span class="cm"># Stake tokens as a validator</span>
+<span class="fn">zero</span> stake deposit --amount <span class="num">10000</span> --key validator-key.json
+
+<span class="cm"># Check stake status</span>
+<span class="fn">zero</span> stake status --key validator-key.json
+
+<span class="cm"># Initiate unstaking (begins unbonding period)</span>
+<span class="fn">zero</span> stake withdraw --amount <span class="num">5000</span> --key validator-key.json</code></pre>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     API REFERENCE
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="api-overview">
+<h2>API Reference</h2>
+<p>The Zero API consists of <strong>8 core endpoints</strong>. All endpoints are available via JSON-RPC over HTTPS. The API is intentionally minimal -- there are no pagination cursors, no filtering operators, no GraphQL. Just 8 functions that do everything you need.</p>
+
+<table>
+  <tr><th>Endpoint</th><th>Description</th></tr>
+  <tr><td><code>Send</code></td><td>Submit a signed transfer</td></tr>
+  <tr><td><code>GetTransfer</code></td><td>Look up a transfer by hash</td></tr>
+  <tr><td><code>GetHistory</code></td><td>Get recent transfers for an account</td></tr>
+  <tr><td><code>GetBalance</code></td><td>Get an account's balance</td></tr>
+  <tr><td><code>GetAccount</code></td><td>Get full account state</td></tr>
+  <tr><td><code>BridgeIn</code></td><td>Initiate a deposit (mint Z)</td></tr>
+  <tr><td><code>BridgeOut</code></td><td>Initiate a withdrawal (burn Z)</td></tr>
+  <tr><td><code>GetBridgeStatus</code></td><td>Check bridge operation status</td></tr>
+</table>
+</section>
+
+<section class="section" id="api-send">
+<h3>Send</h3>
+<p>Submit a signed transfer to the network.</p>
+
+<pre data-lang="json"><code><span class="cm">// Request</span>
+{
+  <span class="str">"method"</span>: <span class="str">"Send"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"from"</span>:      <span class="str">"zr_sender_pubkey"</span>,
+    <span class="str">"to"</span>:        <span class="str">"zr_recipient_pubkey"</span>,
+    <span class="str">"amount"</span>:    <span class="num">10</span>,
+    <span class="str">"nonce"</span>:     <span class="num">42</span>,
+    <span class="str">"signature"</span>: <span class="str">"hex_encoded_28_byte_sig"</span>
+  }
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"tx_hash"</span>: <span class="str">"blake3_hash_of_transfer"</span>,
+  <span class="str">"status"</span>:  <span class="str">"confirmed"</span>
+}</code></pre>
+
+<table>
+  <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>from</code></td><td>string</td><td>Sender's public key (hex or zr_ address)</td></tr>
+  <tr><td><code>to</code></td><td>string</td><td>Recipient's public key (hex or zr_ address)</td></tr>
+  <tr><td><code>amount</code></td><td>u32</td><td>Amount in penny units (max: 2500)</td></tr>
+  <tr><td><code>nonce</code></td><td>u32</td><td>Sender's next nonce (must match account state)</td></tr>
+  <tr><td><code>signature</code></td><td>string</td><td>Hex-encoded 28-byte truncated Ed25519 signature</td></tr>
+</table>
+</section>
+
+<section class="section" id="api-gettransfer">
+<h3>GetTransfer</h3>
+<p>Look up a transfer by its transaction hash. Returns the full transfer details and confirmation status.</p>
+
+<pre data-lang="json"><code><span class="cm">// Request</span>
+{
+  <span class="str">"method"</span>: <span class="str">"GetTransfer"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"tx_hash"</span>: <span class="str">"blake3_hash"</span>
+  }
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"from"</span>:      <span class="str">"zr_sender"</span>,
+  <span class="str">"to"</span>:        <span class="str">"zr_recipient"</span>,
+  <span class="str">"amount"</span>:    <span class="num">10</span>,
+  <span class="str">"nonce"</span>:     <span class="num">42</span>,
+  <span class="str">"status"</span>:    <span class="str">"confirmed"</span>,
+  <span class="str">"timestamp"</span>: <span class="num">1709827200</span>
+}</code></pre>
+</section>
+
+<section class="section" id="api-gethistory">
+<h3>GetHistory</h3>
+<p>Get recent transfers for an account, ordered most recent first. Limited by the ring buffer retention window.</p>
+
+<pre data-lang="json"><code><span class="cm">// Request</span>
+{
+  <span class="str">"method"</span>: <span class="str">"GetHistory"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"account"</span>: <span class="str">"zr_account"</span>,
+    <span class="str">"limit"</span>:   <span class="num">10</span>
+  }
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"transfers"</span>: [
+    {
+      <span class="str">"tx_hash"</span>:   <span class="str">"blake3_hash"</span>,
+      <span class="str">"from"</span>:      <span class="str">"zr_sender"</span>,
+      <span class="str">"to"</span>:        <span class="str">"zr_recipient"</span>,
+      <span class="str">"amount"</span>:    <span class="num">10</span>,
+      <span class="str">"timestamp"</span>: <span class="num">1709827200</span>
+    }
+  ]
+}</code></pre>
+</section>
+
+<section class="section" id="api-getbalance">
+<h3>GetBalance</h3>
+<p>Get the current balance for an account. Returns the balance in penny units.</p>
+
+<pre data-lang="json"><code><span class="cm">// Request</span>
+{
+  <span class="str">"method"</span>: <span class="str">"GetBalance"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"account"</span>: <span class="str">"zr_account"</span>
+  }
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"balance"</span>: <span class="num">48989</span>  <span class="cm">// 489.89 Z = $4.90</span>
+}</code></pre>
+</section>
+
+<section class="section" id="api-getaccount">
+<h3>GetAccount</h3>
+<p>Get the full account state, including balance, nonce, and head hash.</p>
+
+<pre data-lang="json"><code><span class="cm">// Request</span>
+{
+  <span class="str">"method"</span>: <span class="str">"GetAccount"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"account"</span>: <span class="str">"zr_account"</span>
+  }
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"balance"</span>: <span class="num">48989</span>,
+  <span class="str">"nonce"</span>:   <span class="num">1042</span>,
+  <span class="str">"head"</span>:    <span class="str">"blake3_hash_of_latest_transfer"</span>,
+  <span class="str">"flags"</span>:   <span class="num">0</span>
+}</code></pre>
+</section>
+
+<section class="section" id="api-bridgein">
+<h3>BridgeIn</h3>
+<p>Initiate a deposit by referencing a stablecoin transaction on a supported chain. Validators will observe and attest to the deposit.</p>
+
+<pre data-lang="json"><code><span class="cm">// Request</span>
+{
+  <span class="str">"method"</span>: <span class="str">"BridgeIn"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"source_chain"</span>: <span class="str">"ethereum"</span>,
+    <span class="str">"token"</span>:        <span class="str">"usdc"</span>,
+    <span class="str">"tx_hash"</span>:      <span class="str">"0xabc123..."</span>
+  }
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"bridge_id"</span>:    <span class="str">"bridge_mint_001"</span>,
+  <span class="str">"status"</span>:       <span class="str">"pending"</span>,
+  <span class="str">"attestations"</span>: <span class="num">0</span>,
+  <span class="str">"required"</span>:     <span class="num">67</span>  <span class="cm">// 2/3+ of 100 validators</span>
+}</code></pre>
+</section>
+
+<section class="section" id="api-bridgeout">
+<h3>BridgeOut</h3>
+<p>Initiate a withdrawal by burning Z and specifying a destination chain and address for stablecoin release.</p>
+
+<pre data-lang="json"><code><span class="cm">// Request</span>
+{
+  <span class="str">"method"</span>: <span class="str">"BridgeOut"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"dest_chain"</span>:   <span class="str">"arbitrum"</span>,
+    <span class="str">"token"</span>:        <span class="str">"usdc"</span>,
+    <span class="str">"dest_address"</span>: <span class="str">"0xdef456..."</span>,
+    <span class="str">"amount"</span>:       <span class="num">500</span>  <span class="cm">// 500 Z = 5 USDC</span>
+  }
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"bridge_id"</span>: <span class="str">"bridge_burn_042"</span>,
+  <span class="str">"status"</span>:    <span class="str">"pending"</span>,
+  <span class="str">"z_burned"</span>: <span class="num">500</span>
+}</code></pre>
+</section>
+
+<section class="section" id="api-getbridgestatus">
+<h3>GetBridgeStatus</h3>
+<p>Check the status of a bridge operation (deposit or withdrawal).</p>
+
+<pre data-lang="json"><code><span class="cm">// Request</span>
+{
+  <span class="str">"method"</span>: <span class="str">"GetBridgeStatus"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"bridge_id"</span>: <span class="str">"bridge_mint_001"</span>
+  }
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"bridge_id"</span>:    <span class="str">"bridge_mint_001"</span>,
+  <span class="str">"type"</span>:         <span class="str">"mint"</span>,
+  <span class="str">"status"</span>:       <span class="str">"confirmed"</span>,
+  <span class="str">"attestations"</span>: <span class="num">72</span>,
+  <span class="str">"required"</span>:     <span class="num">67</span>,
+  <span class="str">"amount_z"</span>:     <span class="num">100</span>,  <span class="cm">// 100 Z = 1 USDC</span>
+  <span class="str">"source_chain"</span>: <span class="str">"ethereum"</span>,
+  <span class="str">"source_tx"</span>:    <span class="str">"0xabc123..."</span>
+}</code></pre>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     NETWORK PARAMETERS
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="fee-structure">
+<h2>Fee Structure</h2>
+<p>Zero has the simplest fee structure in crypto:</p>
+
+<div class="formula">fee = 0.01 Z = $0.0001 (flat, per transaction)</div>
+
+<p>There is no:</p>
+<ul>
+  <li>Gas price or gas limit</li>
+  <li>Priority fee or tip</li>
+  <li>Congestion-based pricing</li>
+  <li>Different fee tiers for different transaction types</li>
+  <li>Fee market or auction mechanism</li>
+</ul>
+
+<p>Every transaction costs exactly 0.01 Z. The fee is deducted from the sender's balance in addition to the transfer amount. Total debit: <code>amount + 0.01 Z</code>.</p>
+
+<div class="card card-cyan">
+  <div class="card-title">Predictable costs</div>
+  <p style="margin-bottom:0;">A service that makes 1,000 Zero transactions per day knows it will cost exactly 10 Z ($0.10) per day in fees. This predictability is critical for machine budgeting -- agents can compute exact costs before committing to multi-step workflows.</p>
+</div>
+</section>
+
+<section class="section" id="limits">
+<h2>Limits</h2>
+
+<table>
+  <tr><th>Parameter</th><th>Value</th><th>Rationale</th></tr>
+  <tr><td>Max transaction amount</td><td>25 Z ($0.25)</td><td>Micropayments only. Large transfers go through traditional rails.</td></tr>
+  <tr><td>Max account balance</td><td>~42,949 Z ($429.49)</td><td>u32 limit in penny units. Sufficient for agent working capital.</td></tr>
+  <tr><td>Transaction size</td><td>100 bytes (fixed)</td><td>No variable-length fields. Enables maximum throughput.</td></tr>
+  <tr><td>Account state size</td><td>48 bytes (fixed)</td><td>Minimal state footprint.</td></tr>
+  <tr><td>Nonce</td><td>u32 (0 to ~4.29B)</td><td>Sufficient for ~136 years at 1 tx/sec.</td></tr>
+  <tr><td>Ring buffer retention</td><td>Configurable (~50 GB)</td><td>Recent history for auditing. Old transfers pruned.</td></tr>
+</table>
+
+<div class="card card-amber">
+  <div class="card-title">Why cap at 25 Z?</div>
+  <p style="margin-bottom:0;">The 25 Z ($0.25) cap is a <strong>security design choice</strong>. By limiting individual transaction value, the network reduces the incentive for attacks. The truncated 28-byte signatures are sufficient for this value range. If you need to move more than $0.25, you should use Ethereum, Solana, or traditional banking -- those systems are designed and audited for high-value transfers. Zero is designed for the other 99% of transactions that are too small for those systems.</p>
+</div>
+</section>
+
+<section class="section" id="security-model">
+<h2>Security Model</h2>
+
+<h3>Cryptographic Primitives</h3>
+<table>
+  <tr><th>Primitive</th><th>Algorithm</th><th>Notes</th></tr>
+  <tr><td>Key pairs</td><td>Ed25519</td><td>32-byte public keys, 64-byte private keys</td></tr>
+  <tr><td>Signatures</td><td>Ed25519 (truncated)</td><td>28 bytes (224 bits). Secure for micropayment values.</td></tr>
+  <tr><td>Hashing</td><td>BLAKE3</td><td>32-byte digests. Used for tx hashes, account chains, DAG links.</td></tr>
+  <tr><td>Transport</td><td>TLS 1.3</td><td>All validator-to-validator and client-to-validator communication.</td></tr>
+</table>
+
+<h3>Consensus Security</h3>
+<ul>
+  <li><strong>Byzantine fault tolerance:</strong> Tolerates up to 1/3 of validators (by stake) being malicious.</li>
+  <li><strong>Deterministic finality:</strong> No chain reorganizations. Once confirmed, a transaction cannot be reversed.</li>
+  <li><strong>Slashing:</strong> Validators that sign conflicting state transitions have their stake slashed.</li>
+</ul>
+
+<h3>Bridge Security</h3>
+<ul>
+  <li><strong>2/3+ attestation threshold:</strong> Same security model as the main consensus.</li>
+  <li><strong>No admin keys:</strong> Vault contracts cannot be upgraded, paused, or drained by any individual.</li>
+  <li><strong>Invariant enforcement:</strong> Total Z supply must always equal 100x total locked stablecoins.</li>
+</ul>
+
+<h3>Economic Security</h3>
+<ul>
+  <li><strong>Max tx value: 25 Z ($0.25).</strong> The maximum gain from a successful attack on a single transaction is $0.25.</li>
+  <li><strong>No MEV.</strong> No smart contracts means no sandwich attacks, no front-running, no flashloan exploits.</li>
+  <li><strong>No governance attacks.</strong> There is no on-chain governance to capture.</li>
+</ul>
+</section>
+
+<hr class="section-divider">
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     ROADMAP
+     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+<section class="section" id="roadmap">
+<h2>Roadmap</h2>
+
+<div class="phase-card" data-phase="1">
+  <h4>Phase 1 -- Foundation</h4>
+  <ul>
+    <li>Core chain implementation (Rust)</li>
+    <li>Single-shard architecture</li>
+    <li>100,000+ TPS target</li>
+    <li>USDC vaults on Ethereum, Arbitrum, Base, Solana</li>
+    <li>Python, JavaScript, and Rust SDKs</li>
+    <li>x402 protocol and MCP integration</li>
+    <li>Testnet launch</li>
+  </ul>
+</div>
+
+<div class="phase-card" data-phase="2">
+  <h4>Phase 2 -- Scale</h4>
+  <ul>
+    <li>Multi-chain vaults (USDT support)</li>
+    <li>Sharding for horizontal scalability</li>
+    <li>1,000,000+ TPS target</li>
+    <li>Additional chain integrations</li>
+    <li>Advanced validator tooling</li>
+  </ul>
+</div>
+
+<div class="phase-card" data-phase="3">
+  <h4>Phase 3 -- Global</h4>
+  <ul>
+    <li>Global scale deployment</li>
+    <li>Fiat on/off ramps</li>
+    <li>Geographic distribution of validator set</li>
+    <li>10,000,000+ TPS target</li>
+    <li>Enterprise integrations</li>
+  </ul>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════ -->
+<div class="footer">
+  <p>Zero Network &middot; <a href="https://zzero.net">zzero.net</a> &middot; <a href="https://explorer.zzero.net">Explorer</a> &middot; <a href="https://mcp.zzero.net">MCP</a></p>
+  <p style="margin-top: 8px; color: var(--dim);">Built for machines. Documented for humans.</p>
+</div>
+
+</main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════ -->
+<script>
+// Sidebar toggle (mobile)
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+
+// Close sidebar when clicking a link (mobile)
+document.querySelectorAll('.sidebar-link').forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('open');
+    }
+  });
+});
+
+// Active sidebar link tracking on scroll
+const sections = document.querySelectorAll('.section[id]');
+const sidebarLinks = document.querySelectorAll('.sidebar-link');
+
+function updateActiveLink() {
+  const scrollPos = window.scrollY + 100;
+
+  let current = '';
+  sections.forEach(section => {
+    if (section.offsetTop <= scrollPos) {
+      current = section.getAttribute('id');
+    }
+  });
+
+  sidebarLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) {
+      link.classList.add('active');
+    }
+  });
+}
+
+window.addEventListener('scroll', updateActiveLink, { passive: true });
+window.addEventListener('load', updateActiveLink);
+</script>
+</body>
+</html>
