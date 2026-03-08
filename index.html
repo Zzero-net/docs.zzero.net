@@ -1134,7 +1134,7 @@ tr:hover td {
 <section class="section" id="python-sdk">
 <h2>Python SDK</h2>
 <p>Install the Python SDK:</p>
-<pre data-lang="bash"><code><span class="fn">pip</span> <span class="str">install</span> zero-sdk</code></pre>
+<pre data-lang="bash"><code><span class="fn">pip</span> <span class="str">install</span> zero-network</code></pre>
 
 <h3>Basic Usage</h3>
 <pre data-lang="python"><code><span class="kw">from</span> zero <span class="kw">import</span> Wallet
@@ -1223,7 +1223,7 @@ history.<span class="fn">forEach</span>(tx => console.<span class="fn">log</span
 <h2>Rust SDK</h2>
 <p>Add the Rust SDK to your <code>Cargo.toml</code>:</p>
 <pre data-lang="toml"><code>[dependencies]
-zero-sdk = <span class="str">"0.1"</span></code></pre>
+zero-network = <span class="str">"0.1"</span></code></pre>
 
 <h3>Basic Usage</h3>
 <pre data-lang="rust"><code><span class="kw">use</span> zero_sdk::{Wallet, Result};
@@ -2170,7 +2170,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 <div class="phase-card" data-phase="2">
   <h4>Phase 2 -- Bridge + Deploy</h4>
   <ul>
-    <li>Vault contract on Arbitrum (USDC)</li>
+    <li>Vault contract on Arbitrum (USDT)</li>
     <li>Bridge circuit breaker</li>
     <li>Watcher service</li>
     <li>USDT support, more vault chains</li>
