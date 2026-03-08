@@ -1520,6 +1520,10 @@ app.<span class="fn">get</span>(<span class="str">'/report/:id'</span>, paywall.
   <span class="str">"x-402-description"</span>: <span class="str">"Pay 0.05 Z to read this article"</span>
 }</code></pre>
 <p>The agent's SDK auto-pays, attaches the receipt in an <code>X-Zero-Receipt</code> header, and retries. The middleware verifies and serves content. The entire flow takes &lt;1 second.</p>
+
+<div class="info-box" style="margin-top: 16px; padding: 12px 16px; border-left: 3px solid var(--accent); background: rgba(0, 255, 136, 0.04); border-radius: 4px;">
+  <strong>Zero Pay Widget</strong> &mdash; For a ready-made embeddable payment widget, see <a href="https://pay.zzero.net">pay.zzero.net</a>.
+</div>
 </section>
 
 <section class="section" id="api-paywall">
@@ -2217,7 +2221,7 @@ wallet.<span class="fn">set_policy</span>(policy)
      FOOTER
      ═══════════════════════════════════════════════════════ -->
 <div class="footer">
-  <p>Zero Network &middot; <a href="https://zzero.net">zzero.net</a> &middot; <a href="https://explorer.zzero.net">Explorer</a> &middot; <a href="https://mcp.zzero.net">MCP</a> &middot; <a href="https://pay.zzero.net">Pay</a></p>
+  <p>Zero Network &middot; <a href="https://zzero.net">zzero.net</a> &middot; <a href="https://explorer.zzero.net">Explorer</a> &middot; <a href="https://mcp.zzero.net">MCP</a> &middot; <a href="https://pay.zzero.net">Pay</a> &middot; <a href="https://github.com/Zzero-net">GitHub</a></p>
   <p style="margin-top: 8px; color: var(--dim);">Built for machines. Documented for humans.</p>
 </div>
 
