@@ -1015,6 +1015,17 @@ tr:hover td {
   <li><strong>Multi-chain.</strong> Vaults are deployed on multiple chains to meet users where they are.</li>
 </ul>
 
+<h3>Contract Security</h3>
+<ul>
+  <li><strong>AccessControl (OpenZeppelin):</strong> Role-based permissions for all privileged operations.</li>
+  <li><strong>EIP-712 typed signatures:</strong> Human-readable signing payloads for Trinity Validator approvals.</li>
+  <li><strong>Asymmetric pause:</strong> Any 1 Trinity Validator can pause all bridge operations; only the admin role can unpause.</li>
+  <li><strong>Tiered circuit breaker:</strong> &le;20% TVL per 24h requires 2-of-3 Trinity approval. 20-50% TVL requires 3-of-3 Trinity approval. &gt;50% TVL is blocked entirely.</li>
+  <li><strong>Timelocked guardian rotation:</strong> 48-hour delay for any guardian change, observable on-chain.</li>
+  <li><strong>ReentrancyGuard:</strong> Applied to all fund-moving functions.</li>
+  <li><strong>Replay prevention:</strong> Unique <code>bridgeId</code> per operation prevents replay attacks.</li>
+</ul>
+
 <h3>Invariant Enforcement</h3>
 <p>The core safety property is checked at every consensus round:</p>
 <div class="formula">total_Z_supply == 100 &times; total_stablecoins_locked</div>
@@ -1077,6 +1088,16 @@ tr:hover td {
   <li><strong>Monitor vault contracts</strong> for deposit events.</li>
   <li><strong>Verify transactions</strong> on source chains before attesting.</li>
   <li><strong>Sign attestations</strong> using their Zero validator key.</li>
+</ul>
+
+<h3>Trinity Validators</h3>
+<p>Bridge operations (mint/burn) are controlled by three trusted parties called <strong>Trinity Validators</strong>, separate from the consensus validator set. All vault contract operations require a <strong>2-of-3 multisig</strong> from the Trinity Validators.</p>
+<ul>
+  <li><strong>Organizational separation:</strong> Each Trinity Validator is a different organization in a different legal jurisdiction.</li>
+  <li><strong>Hardware-only signing:</strong> All Trinity Validator keys are held in HSMs or hardware wallets. No software key storage.</li>
+  <li><strong>No delegation without expiry:</strong> Signing authority cannot be delegated without an on-chain expiry enforced at the contract level.</li>
+  <li><strong>Asymmetric pause:</strong> Any single Trinity Validator can pause bridge operations; only the admin role can unpause.</li>
+  <li><strong>Timelocked rotation:</strong> Guardian rotation requires a 48-hour delay, observable on-chain before it takes effect.</li>
 </ul>
 </section>
 
@@ -2017,7 +2038,10 @@ wallet.<span class="fn">set_policy</span>(policy)
   <tr><td>Account creation fee</td><td>1.00 Z ($0.01) one-time</td><td>Charged on first transfer to a new account. Prevents dust account spam.</td></tr>
   <tr><td>Min send balance</td><td>1.00 Z ($0.01)</td><td>Accounts below this threshold can only receive, not send.</td></tr>
   <tr><td>Per-account rate limit</td><td>100 tx/s (sliding window)</td><td>Prevents transaction spam from a single account.</td></tr>
-  <tr><td>Bridge circuit breaker</td><td>Max 20% of reserves per 24h</td><td>Limits maximum mintable Z to prevent bridge drain attacks.</td></tr>
+  <tr><td>Bridge circuit breaker</td><td>Tiered: 20% (2-of-3), 50% (3-of-3), &gt;50% blocked per 24h</td><td>Limits maximum mintable Z to prevent bridge drain attacks.</td></tr>
+  <tr><td>Guardian rotation delay</td><td>48 hours</td><td>Timelocked delay for Trinity Validator rotation, observable on-chain.</td></tr>
+  <tr><td>Slashing (equivocation)</td><td>100% of stake burned</td><td>Validators that sign conflicting state transitions lose entire stake.</td></tr>
+  <tr><td>Slashing (downtime)</td><td>10% of stake burned</td><td>Validators with extended downtime are penalized.</td></tr>
   <tr><td>Dust pruning</td><td>&lt;0.10 Z for 30 days</td><td>Accounts below 0.10 Z inactive for 30 days can be pruned from state.</td></tr>
   <tr><td>Max validators</td><td>1,024</td><td>Ranked by stake. Balances decentralization with consensus performance.</td></tr>
 </table>
@@ -2051,7 +2075,10 @@ wallet.<span class="fn">set_policy</span>(policy)
 <h3>Bridge Security</h3>
 <ul>
   <li><strong>2/3+ attestation threshold:</strong> Same security model as the main consensus.</li>
-  <li><strong>No admin keys:</strong> Vault contracts cannot be upgraded, paused, or drained by any individual.</li>
+  <li><strong>Trinity Validators:</strong> 2-of-3 multisig from independent organizations in separate jurisdictions controls all mint/burn operations.</li>
+  <li><strong>Hardware-only signing:</strong> Trinity Validator keys held in HSMs/hardware wallets.</li>
+  <li><strong>Tiered circuit breaker:</strong> &le;20% TVL = 2-of-3, 20-50% = 3-of-3, &gt;50% = blocked.</li>
+  <li><strong>Asymmetric pause:</strong> Any 1 Trinity Validator can pause; only admin can unpause.</li>
   <li><strong>Invariant enforcement:</strong> Total Z supply must always equal 100x total locked stablecoins.</li>
 </ul>
 
@@ -2068,11 +2095,14 @@ wallet.<span class="fn">set_policy</span>(policy)
   <tr><td>Transaction spam</td><td>Per-account rate limit (100 tx/s), flat fee (0.01 Z)</td></tr>
   <tr><td>Dust account spam</td><td>Account creation fee (1 Z) on first transfer to new account</td></tr>
   <tr><td>State bloat</td><td>Dust pruning (&lt;0.10 Z for 30 days), rolling window transfer log</td></tr>
-  <tr><td>Validator equivocation</td><td>Trust score &rarr; 0, immediate ejection, stake at risk</td></tr>
-  <tr><td>Poor validator behavior</td><td>Trust scoring with miss/late penalties, bottom 5% ejected per epoch</td></tr>
+  <tr><td>Validator equivocation</td><td>100% stake slash + trust score &rarr; 0 + immediate ejection</td></tr>
+  <tr><td>Poor validator behavior</td><td>Trust scoring with miss/late penalties, 10% slash for extended downtime, bottom 5% ejected per epoch</td></tr>
   <tr><td>Sybil validators</td><td>Minimum stake 10,000 Z ($100), max 1,024 validators ranked by stake</td></tr>
   <tr><td>Stake-and-slash</td><td>7-day unbonding period</td></tr>
   <tr><td>Bridge drain</td><td>Circuit breaker: max 20% of reserves mintable per 24h</td></tr>
+  <tr><td>Invalid bridge attestation</td><td>100% stake slash</td></tr>
+  <tr><td>Bridge key compromise</td><td>Tiered circuit breaker, asymmetric pause, timelocked rotation</td></tr>
+  <tr><td>Stale delegation</td><td>On-chain expiry enforced at contract level</td></tr>
   <tr><td>Low-balance griefing</td><td>Minimum send balance (1 Z); below this, accounts can only receive</td></tr>
   <tr><td>Amount overflow</td><td>Max transfer amount 25 Z; u32 with saturation arithmetic</td></tr>
 </table>
@@ -2102,7 +2132,7 @@ wallet.<span class="fn">set_policy</span>(policy)
     <li>TOML config + genesis, keyfiles, binary snapshots</li>
     <li>Python SDK with 4-line wallet</li>
     <li>3-validator local devnet with full consensus</li>
-    <li>68 Rust tests + 9 Python tests</li>
+    <li>194 tests (100 Rust + 15 Python + 31 JS + 48 Solidity)</li>
   </ul>
 </div>
 
@@ -2115,15 +2145,20 @@ wallet.<span class="fn">set_policy</span>(policy)
     <li>TLS + validator auth on gossip</li>
     <li>Prometheus metrics</li>
     <li>JavaScript SDK</li>
+    <li>Trinity Validators -- bridge guardian system <span class="badge badge-green">Complete</span></li>
+    <li>Validator slashing -- 100% equivocation, 10% downtime <span class="badge badge-green">Complete</span></li>
+    <li>Security research -- bridge hack post-mortems <span class="badge badge-green">Complete</span></li>
+    <li>Vault contract tests: 48 tests <span class="badge badge-green">Complete</span></li>
     <li>Public testnet</li>
   </ul>
 </div>
 
 <div class="phase-card" data-phase="2">
-  <h4>Phase 2 -- Bridge + Scale</h4>
+  <h4>Phase 2 -- Bridge + Deploy</h4>
   <ul>
     <li>Vault contract on Arbitrum (USDC)</li>
     <li>Bridge circuit breaker</li>
+    <li>Watcher service</li>
     <li>USDT support, more vault chains</li>
     <li>Permissionless validator staking</li>
     <li>Archive nodes, block explorer</li>
@@ -2135,6 +2170,8 @@ wallet.<span class="fn">set_policy</span>(policy)
   <h4>Phase 3 -- Mainnet</h4>
   <ul>
     <li>Security audit</li>
+    <li>Bug bounty program</li>
+    <li>UUPS upgradeability &rarr; ossification path</li>
     <li>Cross-vault rebalancing</li>
     <li>Geographic distribution</li>
     <li>Sharding if needed</li>
