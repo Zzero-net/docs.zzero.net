@@ -851,7 +851,7 @@ tr:hover td {
 <h3>Minting (Deposit)</h3>
 <ol>
   <li>User deposits USDC or USDT to the vault contract on a supported chain (Ethereum, Solana, Arbitrum, Base).</li>
-  <li>Validators observe and attest to the deposit (2/3+ threshold).</li>
+  <li>Trinity Validators observe and attest to the deposit (2/3+ threshold).</li>
   <li>Once attested, the equivalent Z is minted to the user's Zero account.</li>
   <li>Conversion: <code>1 USDC = 100 Z</code>.</li>
 </ol>
@@ -860,7 +860,7 @@ tr:hover td {
 <ol>
   <li>User initiates a BridgeOut transaction on Zero, specifying destination chain, token (USDC/USDT), and destination address.</li>
   <li>The Z is burned on the Zero network.</li>
-  <li>Validators attest to the burn.</li>
+  <li>Trinity Validators attest to the burn.</li>
   <li>Once attested, the vault contract releases the equivalent stablecoin to the destination address.</li>
 </ol>
 
@@ -2095,7 +2095,7 @@ wallet.<span class="fn">set_policy</span>(policy)
   <tr><td>Transaction spam</td><td>Per-account rate limit (100 tx/s), flat fee (0.01 Z)</td></tr>
   <tr><td>Dust account spam</td><td>Account creation fee (1 Z) on first transfer to new account</td></tr>
   <tr><td>State bloat</td><td>Dust pruning (&lt;0.10 Z for 30 days), rolling window transfer log</td></tr>
-  <tr><td>Validator equivocation</td><td>100% stake slash + trust score &rarr; 0 + immediate ejection</td></tr>
+  <tr><td>Validator equivocation</td><td>100% stake slash + trust score &rarr; 0 + immediate ejection (slashed funds credited to protocol reserve)</td></tr>
   <tr><td>Poor validator behavior</td><td>Trust scoring with miss/late penalties, 10% slash for extended downtime, bottom 5% ejected per epoch</td></tr>
   <tr><td>Sybil validators</td><td>Minimum stake 10,000 Z ($100), max 1,024 validators ranked by stake</td></tr>
   <tr><td>Stake-and-slash</td><td>7-day unbonding period</td></tr>
@@ -2148,7 +2148,7 @@ wallet.<span class="fn">set_policy</span>(policy)
     <li>Trinity Validators -- bridge guardian system <span class="badge badge-green">Complete</span></li>
     <li>Validator slashing -- 100% equivocation, 10% downtime <span class="badge badge-green">Complete</span></li>
     <li>Security research -- bridge hack post-mortems <span class="badge badge-green">Complete</span></li>
-    <li>Vault contract tests: 48 tests <span class="badge badge-green">Complete</span></li>
+    <li>Vault contract tests: 48 tests (ZeroVault.t.sol, CrossBridge.t.sol) <span class="badge badge-green">Complete</span></li>
     <li>Public testnet</li>
   </ul>
 </div>
@@ -2188,7 +2188,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 
 <section class="section" id="crate-structure">
 <h2>Crate Structure</h2>
-<p>The Zero chain is implemented as a Rust workspace with six crates:</p>
+<p>The Zero chain is implemented as a Rust workspace with seven crates:</p>
 
 <pre data-lang="text"><code>chain/crates/
 ├── <span class="fn">zero-types/</span>      <span class="cm"># Transfer, Account, BlockRef, Event, params, config</span>
@@ -2196,16 +2196,18 @@ wallet.<span class="fn">set_policy</span>(policy)
 ├── <span class="fn">zero-storage/</span>    <span class="cm"># AccountStore, ring buffer, executor, rate limiter, snapshots</span>
 ├── <span class="fn">zero-consensus/</span>  <span class="cm"># DAG, Committee, ValidatorState, TrustScorer, Node, event loop</span>
 ├── <span class="fn">zero-network/</span>    <span class="cm"># gRPC server (8 client + 2 gossip endpoints)</span>
-└── <span class="fn">zero-node/</span>       <span class="cm"># Binary entry point</span></code></pre>
+├── <span class="fn">zero-node/</span>       <span class="cm"># Binary entry point</span>
+└── <span class="fn">zero-bridge/</span>     <span class="cm"># Bridge attestation service for Trinity Validators</span></code></pre>
 
 <table>
   <tr><th>Crate</th><th>Purpose</th></tr>
   <tr><td><code>zero-types</code></td><td>Core data types: Transfer (100 bytes), Account (48 bytes), BlockRef, Event, network parameters, TOML config</td></tr>
   <tr><td><code>zero-crypto</code></td><td>Cryptographic primitives: Ed25519 key generation and signing, BLAKE3 hashing, keyfile serialization</td></tr>
-  <tr><td><code>zero-storage</code></td><td>State management: DashMap-backed AccountStore, ring buffer transfer log, transaction executor, per-account rate limiter, binary snapshots</td></tr>
+  <tr><td><code>zero-storage</code></td><td>State management: DashMap-backed AccountStore, StakeStore (slashing), TrinityValidatorSet (bridge), ring buffer transfer log, transaction executor, per-account rate limiter, binary snapshots</td></tr>
   <tr><td><code>zero-consensus</code></td><td>Consensus engine: DAG structure, Committee management, ValidatorState, TrustScorer, Node orchestration, event loop with heartbeats</td></tr>
   <tr><td><code>zero-network</code></td><td>Networking: gRPC server with 8 client-facing endpoints and 2 gossip endpoints (PushEvent, PullEvents)</td></tr>
   <tr><td><code>zero-node</code></td><td>Binary entry point: CLI argument parsing, config loading, node startup</td></tr>
+  <tr><td><code>zero-bridge</code></td><td>Bridge attestation service for Trinity Validators: watches vault events on Base/Arbitrum, coordinates 2-of-3 signatures, executes mints and releases. Modules: EIP-712 typed signing (eip712.rs), deposit event parsing (events.rs), signature collection coordinator (coordinator.rs), bridge configuration (config.rs).</td></tr>
 </table>
 </section>
 
