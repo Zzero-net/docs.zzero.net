@@ -862,7 +862,7 @@ tr:hover td {
 
 <h3>Minting (Deposit)</h3>
 <ol>
-  <li>User deposits USDC or USDT to the vault contract on a supported chain (Ethereum, Solana, Arbitrum, Base).</li>
+  <li>User deposits USDC or USDT to the vault contract on a supported chain (Base or Arbitrum).</li>
   <li>Trinity Validators observe and attest to the deposit (2/3+ threshold).</li>
   <li>Once attested, the equivalent Z is minted to the user's Zero account.</li>
   <li>Conversion: <code>1 USDC = 100 Z</code>.</li>
@@ -1071,7 +1071,7 @@ tr:hover td {
 <h4>Step 1: Initiate BridgeOut</h4>
 <p>The user sends a <code>BridgeOut</code> transaction on Zero, specifying:</p>
 <ul>
-  <li>Destination chain (e.g., Ethereum, Solana)</li>
+  <li>Destination chain (Base or Arbitrum)</li>
   <li>Token type (USDC or USDT)</li>
   <li>Destination address on the target chain</li>
   <li>Amount of Z to burn</li>
@@ -1118,12 +1118,8 @@ tr:hover td {
 
 <table>
   <tr><th>Chain</th><th>Tokens</th><th>Phase</th><th>Status</th></tr>
-  <tr><td>Ethereum</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
-  <tr><td>Arbitrum</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
   <tr><td>Base</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
-  <tr><td>Solana</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
-  <tr><td>Ethereum</td><td>USDT</td><td>Phase 2</td><td><span class="badge badge-amber">Planned</span></td></tr>
-  <tr><td>Solana</td><td>USDT</td><td>Phase 2</td><td><span class="badge badge-amber">Planned</span></td></tr>
+  <tr><td>Arbitrum</td><td>USDT</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
 </table>
 </section>
 
@@ -1164,9 +1160,9 @@ history = w.<span class="fn">history</span>(limit=<span class="num">10</span>)
     <span class="fn">print</span>(<span class="str">f"</span>{tx.direction} {tx.amount} Z <span class="str">-></span> {tx.counterparty}<span class="str">"</span>)</code></pre>
 
 <h3>Bridge Operations</h3>
-<pre data-lang="python"><code><span class="cm"># Deposit: after sending USDC to vault on Ethereum</span>
+<pre data-lang="python"><code><span class="cm"># Deposit: after sending USDC to vault on Base</span>
 mint = w.<span class="fn">bridge_in</span>(
-    source_chain=<span class="str">"ethereum"</span>,
+    source_chain=<span class="str">"base"</span>,
     token=<span class="str">"usdc"</span>,
     tx_hash=<span class="str">"0xabc123..."</span>
 )
@@ -1207,7 +1203,7 @@ history.<span class="fn">forEach</span>(tx => console.<span class="fn">log</span
 <h3>Bridge Operations</h3>
 <pre data-lang="javascript"><code><span class="cm">// Deposit: track a USDC deposit</span>
 <span class="kw">const</span> mint = <span class="kw">await</span> w.<span class="fn">bridgeIn</span>({
-  sourceChain: <span class="str">'ethereum'</span>,
+  sourceChain: <span class="str">'base'</span>,
   token: <span class="str">'usdc'</span>,
   txHash: <span class="str">'0xabc123...'</span>
 });
@@ -1948,7 +1944,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 {
   <span class="str">"method"</span>: <span class="str">"BridgeIn"</span>,
   <span class="str">"params"</span>: {
-    <span class="str">"source_chain"</span>: <span class="str">"ethereum"</span>,
+    <span class="str">"source_chain"</span>: <span class="str">"base"</span>,
     <span class="str">"token"</span>:        <span class="str">"usdc"</span>,
     <span class="str">"tx_hash"</span>:      <span class="str">"0xabc123..."</span>
   }
@@ -2006,7 +2002,7 @@ wallet.<span class="fn">set_policy</span>(policy)
   <span class="str">"attestations"</span>: <span class="num">72</span>,
   <span class="str">"required"</span>:     <span class="num">67</span>,
   <span class="str">"amount_z"</span>:     <span class="num">100</span>,  <span class="cm">// 100 Z = 1 USDC</span>
-  <span class="str">"source_chain"</span>: <span class="str">"ethereum"</span>,
+  <span class="str">"source_chain"</span>: <span class="str">"base"</span>,
   <span class="str">"source_tx"</span>:    <span class="str">"0xabc123..."</span>
 }</code></pre>
 </section>
@@ -2148,7 +2144,7 @@ wallet.<span class="fn">set_policy</span>(policy)
     <li>TOML config + genesis, keyfiles, binary snapshots</li>
     <li>Python SDK with 4-line wallet</li>
     <li>3-validator local devnet with full consensus</li>
-    <li>194 tests (100 Rust + 15 Python + 31 JS + 48 Solidity)</li>
+    <li>249 tests (150 Rust + 15 Python + 31 JS + 53 Solidity)</li>
   </ul>
 </div>
 
@@ -2164,7 +2160,7 @@ wallet.<span class="fn">set_policy</span>(policy)
     <li>Trinity Validators -- bridge guardian system <span class="badge badge-green">Complete</span></li>
     <li>Validator slashing -- 100% equivocation, 10% downtime <span class="badge badge-green">Complete</span></li>
     <li>Security research -- bridge hack post-mortems <span class="badge badge-green">Complete</span></li>
-    <li>Vault contract tests: 48 tests (ZeroVault.t.sol, CrossBridge.t.sol) <span class="badge badge-green">Complete</span></li>
+    <li>Vault contract tests: 53 tests (ZeroVault.t.sol, CrossBridge.t.sol) <span class="badge badge-green">Complete</span></li>
     <li>Public testnet</li>
   </ul>
 </div>
