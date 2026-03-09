@@ -693,7 +693,7 @@ tr:hover td {
   <div class="sidebar-section">
     <div class="sidebar-heading">Architecture</div>
     <a href="#block-lattice" class="sidebar-link">Block-Lattice Account Model</a>
-    <a href="#transaction-format" class="sidebar-link">Transaction Format (100 bytes)</a>
+    <a href="#transaction-format" class="sidebar-link">Transaction Format (136 bytes)</a>
     <a href="#account-state" class="sidebar-link">Account State (48 bytes)</a>
     <a href="#consensus" class="sidebar-link">Consensus (DAG BFT)</a>
     <a href="#storage-pruning" class="sidebar-link">Storage &amp; Pruning</a>
@@ -801,7 +801,7 @@ tr:hover td {
 
 <p>Every transaction on Zero costs a flat <code>0.01 Z</code> ($0.0001 USD). The token is backed 1:1 by stablecoins locked in auditable bridge vault contracts. There is no speculative float, no inflationary emission schedule, no governance token. Zero exists to move money -- small amounts, very fast, between machines.</p>
 
-<p>The network is implemented in <strong>Rust</strong> from scratch (not a fork), using a block-lattice account model inspired by Nano, with a leaderless DAG-based asynchronous BFT consensus layer inspired by Mysticeti and Lachesis. The result is a system that achieves deterministic finality in milliseconds, stores only the latest state (not unbounded history), and fits a complete transaction into <strong>100 bytes</strong>.</p>
+<p>The network is implemented in <strong>Rust</strong> from scratch (not a fork), using a block-lattice account model inspired by Nano, with a leaderless DAG-based asynchronous BFT consensus layer inspired by Mysticeti and Lachesis. The result is a system that achieves deterministic finality in milliseconds, stores only the latest state (not unbounded history), and fits a complete transaction into <strong>136 bytes</strong>.</p>
 </section>
 
 <section class="section" id="why-zero-exists">
@@ -923,14 +923,14 @@ tr:hover td {
 
 <section class="section" id="transaction-format">
 <h2>Transaction Format</h2>
-<p>Every Zero transaction is exactly <strong>100 bytes</strong> on the wire (with truncated signature). No variable-length fields, no optional extensions, no metadata. This fixed size enables aggressive optimization in serialization and networking. In storage, transfers are stored as <strong>136 bytes</strong> with the full 64-byte Ed25519 signature for archival integrity.</p>
+<p>Every Zero transaction is exactly <strong>136 bytes</strong> on the wire. No variable-length fields, no optional extensions, no metadata. This fixed size enables aggressive optimization in serialization and networking.</p>
 
 <pre data-lang="rust"><code><span class="kw">struct</span> <span class="tp">ZeroTransfer</span> {
     <span class="pr">from</span>:      [<span class="num">32</span> <span class="tp">bytes</span>]  <span class="cm">// Ed25519 public key</span>
     <span class="pr">to</span>:        [<span class="num">32</span> <span class="tp">bytes</span>]  <span class="cm">// Ed25519 public key</span>
     <span class="pr">amount</span>:    [<span class="num">4</span> <span class="tp">bytes</span>]   <span class="cm">// u32, penny units</span>
     <span class="pr">nonce</span>:     [<span class="num">4</span> <span class="tp">bytes</span>]   <span class="cm">// u32, monotonic counter</span>
-    <span class="pr">signature</span>: [<span class="num">28</span> <span class="tp">bytes</span>]  <span class="cm">// Ed25519 truncated</span>
+    <span class="pr">signature</span>: [<span class="num">64</span> <span class="tp">bytes</span>]  <span class="cm">// Ed25519 full signature</span>
 }</code></pre>
 
 <table class="struct-table">
@@ -939,12 +939,12 @@ tr:hover td {
   <tr><td><code>to</code></td><td>32 bytes</td><td>Recipient's Ed25519 public key.</td></tr>
   <tr><td><code>amount</code></td><td>4 bytes</td><td>Transfer amount in penny units (u32). Max value: 2500 (25 Z).</td></tr>
   <tr><td><code>nonce</code></td><td>4 bytes</td><td>Monotonically increasing counter. Prevents replay attacks.</td></tr>
-  <tr><td><code>signature</code></td><td>28 bytes</td><td>Truncated Ed25519 signature. 224 bits provide sufficient security for micropayment values.</td></tr>
+  <tr><td><code>signature</code></td><td>64 bytes</td><td>Full Ed25519 signature over the 72-byte unsigned payload.</td></tr>
 </table>
 
-<div class="card card-amber">
-  <div class="card-title">Why 28-byte signatures?</div>
-  <p style="margin-bottom:0;">Standard Ed25519 signatures are 64 bytes. Zero truncates to 28 bytes (224 bits). For a max-value 25 Z ($0.25) transaction, 224-bit signature security is astronomically sufficient -- brute-forcing it would cost many orders of magnitude more than the maximum possible gain. This saves 36 bytes per transaction, which at billions of daily transactions represents significant bandwidth and storage savings.</p>
+<div class="card card-cyan">
+  <div class="card-title">Fixed-size transactions</div>
+  <p style="margin-bottom:0;">Every transaction is exactly 136 bytes -- a 72-byte unsigned payload (from + to + amount + nonce) plus a 64-byte Ed25519 signature. No variable-length encoding, no headers, no padding. This enables zero-copy deserialization and predictable memory allocation.</p>
 </div>
 </section>
 
@@ -1830,7 +1830,7 @@ wallet.<span class="fn">set_policy</span>(policy)
     <span class="str">"to"</span>:        <span class="str">"zr_recipient_pubkey"</span>,
     <span class="str">"amount"</span>:    <span class="num">10</span>,
     <span class="str">"nonce"</span>:     <span class="num">42</span>,
-    <span class="str">"signature"</span>: <span class="str">"hex_encoded_28_byte_sig"</span>
+    <span class="str">"signature"</span>: <span class="str">"hex_encoded_64_byte_sig"</span>
   }
 }
 
@@ -1846,7 +1846,7 @@ wallet.<span class="fn">set_policy</span>(policy)
   <tr><td><code>to</code></td><td>string</td><td>Recipient's public key (hex or zr_ address)</td></tr>
   <tr><td><code>amount</code></td><td>u32</td><td>Amount in penny units (max: 2500)</td></tr>
   <tr><td><code>nonce</code></td><td>u32</td><td>Sender's next nonce (must match account state)</td></tr>
-  <tr><td><code>signature</code></td><td>string</td><td>Hex-encoded 28-byte truncated Ed25519 signature</td></tr>
+  <tr><td><code>signature</code></td><td>string</td><td>Hex-encoded 64-byte Ed25519 signature</td></tr>
 </table>
 </section>
 
@@ -2032,7 +2032,7 @@ wallet.<span class="fn">set_policy</span>(policy)
   <li>Fee market or auction mechanism</li>
 </ul>
 
-<p>Every transaction costs exactly 0.01 Z. The fee is deducted from the sender's balance in addition to the transfer amount. Total debit: <code>amount + 0.01 Z</code>. The smallest possible transaction is 0.01 Z + 0.01 Z fee = <strong>0.02 Z ($0.0002)</strong>. Collected fees are distributed each epoch: <strong>50% to validators</strong> (proportional to stake), <strong>35% to bridge reserve</strong> (vault contract gas), and <strong>15% to protocol reserve</strong> (emergency fund, development).</p>
+<p>Every transaction costs exactly 0.01 Z. The fee is deducted from the sender's balance in addition to the transfer amount. Total debit: <code>amount + 0.01 Z</code>. The smallest possible transaction is 0.01 Z + 0.01 Z fee = <strong>0.02 Z ($0.0002)</strong>. Collected fees are distributed each epoch: <strong>70% to validators</strong> (proportional to stake), <strong>15% to bridge reserve</strong> (vault contract gas), and <strong>15% to protocol reserve</strong> (emergency fund, development).</p>
 
 <div class="card card-cyan">
   <div class="card-title">Predictable costs</div>
@@ -2047,11 +2047,11 @@ wallet.<span class="fn">set_policy</span>(policy)
   <tr><th>Parameter</th><th>Value</th><th>Rationale</th></tr>
   <tr><td>Max transaction amount</td><td>25 Z ($0.25)</td><td>Micropayments only. Large transfers go through traditional rails. u32 with saturation arithmetic.</td></tr>
   <tr><td>Max account balance</td><td>~42,949 Z ($429.49)</td><td>u32 limit in penny units. Sufficient for agent working capital.</td></tr>
-  <tr><td>Transaction size</td><td>100 bytes (fixed)</td><td>No variable-length fields. Enables maximum throughput.</td></tr>
+  <tr><td>Transaction size</td><td>136 bytes (fixed)</td><td>No variable-length fields. Enables maximum throughput.</td></tr>
   <tr><td>Account state size</td><td>48 bytes (fixed)</td><td>Minimal state footprint.</td></tr>
   <tr><td>Nonce</td><td>u32 (0 to ~4.29B)</td><td>Sufficient for ~136 years at 1 tx/sec.</td></tr>
   <tr><td>Ring buffer retention</td><td>Configurable (~50 GB)</td><td>Recent history for auditing. Old transfers pruned.</td></tr>
-  <tr><td>Account creation fee</td><td>1.00 Z ($0.01) one-time</td><td>Charged on first transfer to a new account. Prevents dust account spam.</td></tr>
+  <tr><td>Account creation fee</td><td>5.00 Z ($0.05) one-time</td><td>Charged on first transfer to a new account. Prevents dust account spam.</td></tr>
   <tr><td>Min send balance</td><td>1.00 Z ($0.01)</td><td>Accounts below this threshold can only receive, not send.</td></tr>
   <tr><td>Per-account rate limit</td><td>100 tx/s (sliding window)</td><td>Prevents transaction spam from a single account.</td></tr>
   <tr><td>Bridge circuit breaker</td><td>Tiered: 20% (2-of-3), 50% (3-of-3), &gt;50% blocked per 24h</td><td>Limits maximum mintable Z to prevent bridge drain attacks.</td></tr>
@@ -2064,7 +2064,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 
 <div class="card card-amber">
   <div class="card-title">Why cap at 25 Z?</div>
-  <p style="margin-bottom:0;">The 25 Z ($0.25) cap is a <strong>security design choice</strong>. By limiting individual transaction value, the network reduces the incentive for attacks. The truncated 28-byte signatures are sufficient for this value range. If you need to move more than $0.25, you should use Ethereum, Solana, or traditional banking -- those systems are designed and audited for high-value transfers. Zero is designed for the other 99% of transactions that are too small for those systems.</p>
+  <p style="margin-bottom:0;">The 25 Z ($0.25) cap is a <strong>security design choice</strong>. By limiting individual transaction value, the network reduces the incentive for attacks. If you need to move more than $0.25, you should use Ethereum, Solana, or traditional banking -- those systems are designed and audited for high-value transfers. Zero is designed for the other 99% of transactions that are too small for those systems.</p>
 </div>
 </section>
 
@@ -2075,7 +2075,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 <table>
   <tr><th>Primitive</th><th>Algorithm</th><th>Notes</th></tr>
   <tr><td>Key pairs</td><td>Ed25519</td><td>32-byte public keys, 64-byte private keys</td></tr>
-  <tr><td>Signatures</td><td>Ed25519 (truncated)</td><td>28 bytes (224 bits). Secure for micropayment values.</td></tr>
+  <tr><td>Signatures</td><td>Ed25519</td><td>Full 64-byte signatures over the 72-byte unsigned payload.</td></tr>
   <tr><td>Hashing</td><td>BLAKE3</td><td>32-byte digests. Used for tx hashes, account chains, DAG links.</td></tr>
   <tr><td>Transport</td><td>TLS 1.3</td><td>All validator-to-validator and client-to-validator communication.</td></tr>
 </table>
@@ -2109,7 +2109,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 <table>
   <tr><th>Attack</th><th>Mitigation</th></tr>
   <tr><td>Transaction spam</td><td>Per-account rate limit (100 tx/s), flat fee (0.01 Z)</td></tr>
-  <tr><td>Dust account spam</td><td>Account creation fee (1 Z) on first transfer to new account</td></tr>
+  <tr><td>Dust account spam</td><td>Account creation fee (5 Z) on first transfer to new account</td></tr>
   <tr><td>State bloat</td><td>Dust pruning (&lt;0.10 Z for 30 days), rolling window transfer log</td></tr>
   <tr><td>Validator equivocation</td><td>100% stake slash + trust score &rarr; 0 + immediate ejection (slashed funds credited to protocol reserve)</td></tr>
   <tr><td>Poor validator behavior</td><td>Trust scoring with miss/late penalties, 10% slash for extended downtime, bottom 5% ejected per epoch</td></tr>
@@ -2156,7 +2156,7 @@ wallet.<span class="fn">set_policy</span>(policy)
   <h4>Phase 1 -- Testnet <span class="badge badge-green">Active</span></h4>
   <ul>
     <li>Staking transactions (stake/unstake with 7-day unbonding) <span class="badge badge-green">Complete</span></li>
-    <li>Epoch-based fee distribution (50/35/15 split) <span class="badge badge-green">Complete</span></li>
+    <li>Epoch-based fee distribution (70/15/15 split) <span class="badge badge-green">Complete</span></li>
     <li>Dust pruning <span class="badge badge-green">Complete</span></li>
     <li>mTLS + validator auth on gossip <span class="badge badge-green">Complete</span></li>
     <li>JavaScript SDK <span class="badge badge-green">Complete</span></li>
@@ -2218,7 +2218,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 
 <table>
   <tr><th>Crate</th><th>Purpose</th></tr>
-  <tr><td><code>zero-types</code></td><td>Core data types: Transfer (100 bytes), Account (48 bytes), BlockRef, Event, network parameters, TOML config</td></tr>
+  <tr><td><code>zero-types</code></td><td>Core data types: Transfer (136 bytes), Account (48 bytes), BlockRef, Event, network parameters, TOML config</td></tr>
   <tr><td><code>zero-crypto</code></td><td>Cryptographic primitives: Ed25519 key generation and signing, BLAKE3 hashing, keyfile serialization</td></tr>
   <tr><td><code>zero-storage</code></td><td>State management: DashMap-backed AccountStore, StakeStore (slashing), TrinityValidatorSet (bridge), ring buffer transfer log, transaction executor, per-account rate limiter, binary snapshots</td></tr>
   <tr><td><code>zero-consensus</code></td><td>Consensus engine: DAG structure, Committee management, ValidatorState, TrustScorer, Node orchestration, event loop with heartbeats</td></tr>
