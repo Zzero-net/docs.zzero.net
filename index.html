@@ -847,7 +847,8 @@ tr:hover td {
   <tr><td>Smallest unit</td><td>0.01 Z = $0.0001</td></tr>
   <tr><td>Min transaction</td><td>0.01 Z + 0.01 Z fee = 0.02 Z ($0.0002)</td></tr>
   <tr><td>Max transaction</td><td>25 Z ($0.25)</td></tr>
-  <tr><td>Transaction fee</td><td>0.01 Z (flat, added to amount)</td></tr>
+  <tr><td>Transfer fee</td><td>0.01 Z (flat, added to amount)</td></tr>
+  <tr><td>Bridge-out fee</td><td>0.5 Z ($0.005, covers EVM gas)</td></tr>
   <tr><td>Backing</td><td>1:1 USDC/USDT in bridge vaults</td></tr>
   <tr><td>Bridge rate</td><td>1 USDC = 100 Z</td></tr>
 </table>
@@ -873,9 +874,9 @@ tr:hover td {
 <h3>Burning (Withdrawal)</h3>
 <ol>
   <li>User initiates a BridgeOut transaction on Zero, specifying destination chain, token (USDC/USDT), and destination address.</li>
-  <li>The Z is burned on the Zero network.</li>
-  <li>Trinity Validators attest to the burn.</li>
-  <li>Once attested, the vault contract releases the equivalent stablecoin to the destination address.</li>
+  <li>The Z is burned on the Zero network, plus a <strong>0.5 Z bridge fee</strong> to cover EVM gas costs.</li>
+  <li>Trinity Validators sign an EIP-712 release digest (2-of-3 ECDSA threshold).</li>
+  <li>Once threshold is met, the vault contract releases the equivalent stablecoin to the destination address.</li>
 </ol>
 
 <div class="formula">1 USDC &harr; 100 Z &harr; $1.00</div>
@@ -891,11 +892,11 @@ tr:hover td {
 
 <p>Supported backing assets:</p>
 <ul>
-  <li><strong>USDC</strong> (Circle) -- primary backing asset, available on all supported chains</li>
-  <li><strong>USDT</strong> (Tether) -- secondary backing asset, Phase 2 rollout</li>
+  <li><strong>USDC</strong> (Circle) -- primary backing asset on Base, also accepted on Arbitrum</li>
+  <li><strong>USDT</strong> (Tether) -- primary backing asset on Arbitrum</li>
 </ul>
 
-<p>The vault contracts are simple escrow contracts with no admin keys, no upgrade proxies, and no emergency withdrawal functions. They do one thing: hold stablecoins and release them when validators attest to a valid burn on Zero.</p>
+<p>The vault contracts are controlled by a <strong>ZeroTimelock</strong> contract (24-hour delay, 14-day grace period) that holds the sole admin role. All privileged operations -- guardian rotation, parameter changes, emergency pause -- go through the timelock with 2-of-3 guardian threshold. The deployer has renounced all direct admin access.</p>
 </section>
 
 <hr class="section-divider">
@@ -1024,7 +1025,7 @@ tr:hover td {
 
 <h3>Design Goals</h3>
 <ul>
-  <li><strong>Minimal attack surface.</strong> Vault contracts are pure escrow -- no admin functions, no upgrade mechanisms, no emergency withdrawals.</li>
+  <li><strong>Minimal attack surface.</strong> Vault contracts are pure escrow controlled by a timelocked admin (ZeroTimelock). All privileged operations require 2-of-3 guardian approval and a 24-hour delay.</li>
   <li><strong>Validator-attested.</strong> Deposits and withdrawals require 2/3+ validator attestations, using the same consensus mechanism that secures the Zero network itself.</li>
   <li><strong>Multi-chain.</strong> Vaults are deployed on multiple chains to meet users where they are.</li>
 </ul>
@@ -1121,7 +1122,7 @@ tr:hover td {
 <table>
   <tr><th>Chain</th><th>Tokens</th><th>Phase</th><th>Status</th></tr>
   <tr><td>Base</td><td>USDC</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
-  <tr><td>Arbitrum</td><td>USDT</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td>Arbitrum</td><td>USDC, USDT</td><td>Phase 1</td><td><span class="badge badge-green">Active</span></td></tr>
 </table>
 </section>
 
@@ -1729,22 +1730,22 @@ wallet.<span class="fn">set_policy</span>(policy)
 
 <table>
   <tr><th>Recipient</th><th>Share</th><th>Purpose</th></tr>
-  <tr><td>Validators</td><td>50%</td><td>Distributed proportionally by stake weight</td></tr>
-  <tr><td>Bridge reserve</td><td>35%</td><td>Funds vault contract gas on source/destination chains</td></tr>
+  <tr><td>Validators</td><td>70%</td><td>Distributed proportionally by stake weight</td></tr>
+  <tr><td>Bridge reserve</td><td>15%</td><td>Supplemental reserve for vault gas (bridge-out fee covers most costs)</td></tr>
   <tr><td>Protocol reserve</td><td>15%</td><td>Emergency fund, development, security audits</td></tr>
 </table>
 
 <h3>Revenue Projections</h3>
 <table>
-  <tr><th>Daily Transactions</th><th>Fee Pool (Daily)</th><th>Validator Share (50%)</th><th>Per Validator (100 validators)</th></tr>
-  <tr><td>100 million</td><td>$10,000</td><td>$5,000</td><td>$50/day</td></tr>
-  <tr><td>1 billion</td><td>$100,000</td><td>$50,000</td><td>$500/day</td></tr>
-  <tr><td>10 billion</td><td>$1,000,000</td><td>$500,000</td><td>$5,000/day</td></tr>
+  <tr><th>Daily Transactions</th><th>Fee Pool (Daily)</th><th>Validator Share (70%)</th><th>Per Validator (100 validators)</th></tr>
+  <tr><td>100 million</td><td>$10,000</td><td>$7,000</td><td>$70/day</td></tr>
+  <tr><td>1 billion</td><td>$100,000</td><td>$70,000</td><td>$700/day</td></tr>
+  <tr><td>10 billion</td><td>$1,000,000</td><td>$700,000</td><td>$7,000/day</td></tr>
 </table>
 
 <p>At the fee of 0.01 Z ($0.0001) per transaction:</p>
 <div class="formula">daily_revenue = daily_transactions &times; $0.0001</div>
-<div class="formula">validator_share = daily_revenue &times; 50%</div>
+<div class="formula">validator_share = daily_revenue &times; 70%</div>
 
 <div class="card card-amber">
   <div class="card-title">No inflation</div>
@@ -1963,7 +1964,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 
 <section class="section" id="api-bridgeout">
 <h3>BridgeOut</h3>
-<p>Initiate a withdrawal by burning Z and specifying a destination chain and address for stablecoin release.</p>
+<p>Initiate a withdrawal by burning Z and specifying a destination chain and address for stablecoin release. A bridge-out fee of <strong>0.5 Z ($0.005)</strong> is charged to cover EVM gas costs. The fee is deducted from the sender in addition to the burn amount.</p>
 
 <pre data-lang="json"><code><span class="cm">// Request</span>
 {
@@ -1972,7 +1973,7 @@ wallet.<span class="fn">set_policy</span>(policy)
     <span class="str">"dest_chain"</span>:   <span class="str">"arbitrum"</span>,
     <span class="str">"token"</span>:        <span class="str">"usdc"</span>,
     <span class="str">"dest_address"</span>: <span class="str">"0xdef456..."</span>,
-    <span class="str">"amount"</span>:       <span class="num">500</span>  <span class="cm">// 500 Z = 5 USDC</span>
+    <span class="str">"amount"</span>:       <span class="num">500</span>  <span class="cm">// 500 Z = 5 USDC (+ 50 units fee = 550 total deducted)</span>
   }
 }
 
@@ -1980,7 +1981,8 @@ wallet.<span class="fn">set_policy</span>(policy)
 {
   <span class="str">"bridge_id"</span>: <span class="str">"bridge_burn_042"</span>,
   <span class="str">"status"</span>:    <span class="str">"pending"</span>,
-  <span class="str">"z_burned"</span>: <span class="num">500</span>
+  <span class="str">"z_burned"</span>: <span class="num">500</span>,
+  <span class="str">"fee"</span>:      <span class="num">50</span>
 }</code></pre>
 </section>
 
@@ -2151,31 +2153,32 @@ wallet.<span class="fn">set_policy</span>(policy)
 </div>
 
 <div class="phase-card" data-phase="1" style="border-left: 3px solid var(--cyan);">
-  <h4>Phase 1 -- Testnet <span class="badge badge-cyan">Next</span></h4>
+  <h4>Phase 1 -- Testnet <span class="badge badge-green">Active</span></h4>
   <ul>
-    <li>Staking transactions (stake/unstake with 7-day unbonding)</li>
-    <li>Epoch-based fee distribution (50/35/15 split)</li>
-    <li>Dust pruning</li>
-    <li>TLS + validator auth on gossip</li>
-    <li>Prometheus metrics</li>
-    <li>JavaScript SDK</li>
+    <li>Staking transactions (stake/unstake with 7-day unbonding) <span class="badge badge-green">Complete</span></li>
+    <li>Epoch-based fee distribution (50/35/15 split) <span class="badge badge-green">Complete</span></li>
+    <li>Dust pruning <span class="badge badge-green">Complete</span></li>
+    <li>mTLS + validator auth on gossip <span class="badge badge-green">Complete</span></li>
+    <li>JavaScript SDK <span class="badge badge-green">Complete</span></li>
     <li>Trinity Validators -- bridge guardian system <span class="badge badge-green">Complete</span></li>
     <li>Validator slashing -- 100% equivocation, 10% downtime <span class="badge badge-green">Complete</span></li>
     <li>Security research -- bridge hack post-mortems <span class="badge badge-green">Complete</span></li>
-    <li>Vault contract tests: 53 tests (ZeroVault.t.sol, CrossBridge.t.sol) <span class="badge badge-green">Complete</span></li>
-    <li>Public testnet</li>
+    <li>Vault contract tests: 98 tests (ZeroVault.t.sol, CrossBridge.t.sol, ZeroTimelock.t.sol) <span class="badge badge-green">Complete</span></li>
+    <li>Public testnet (3 validators: EU, US-East, US-Central) <span class="badge badge-green">Complete</span></li>
+    <li>Prometheus metrics</li>
   </ul>
 </div>
 
 <div class="phase-card" data-phase="2">
-  <h4>Phase 2 -- Bridge + Deploy</h4>
+  <h4>Phase 2 -- Bridge + Deploy <span class="badge badge-cyan">In Progress</span></h4>
   <ul>
-    <li>Vault contract on Arbitrum (USDT)</li>
-    <li>Bridge circuit breaker</li>
-    <li>Watcher service</li>
-    <li>USDT support, more vault chains</li>
+    <li>Vault contracts on Base (USDC) + Arbitrum (USDC, USDT) <span class="badge badge-green">Complete</span></li>
+    <li>ZeroTimelock admin (24h delay, 2-of-3 threshold) <span class="badge badge-green">Complete</span></li>
+    <li>Bridge circuit breaker (tiered: 20/50% TVL limits) <span class="badge badge-green">Complete</span></li>
+    <li>Bridge watcher service (auto-mint + auto-release) <span class="badge badge-green">Complete</span></li>
+    <li>Block explorer (explorer.zzero.net) <span class="badge badge-green">Complete</span></li>
+    <li>CI/CD pipelines (Rust, Solidity, Python, JS) <span class="badge badge-green">Complete</span></li>
     <li>Permissionless validator staking</li>
-    <li>Archive nodes, block explorer</li>
     <li>x402 middleware</li>
   </ul>
 </div>
