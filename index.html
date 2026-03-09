@@ -814,7 +814,7 @@ tr:hover td {
   <li><strong>Lightning Network</strong> requires channel management and online receivers -- impractical for ephemeral AI agents.</li>
   <li><strong>Stablecoins on L2s</strong> still require bridging, nonce management, and fee estimation that adds complexity for automated systems.</li>
 </ul>
-<p>Zero solves this by being <em>radically simple</em>. One token, one fee, one purpose. A 100-byte transaction, a 48-byte account. No smart contracts, no virtual machine, no ERC-20 token standards. Just value transfer, as fast as the network can gossip it.</p>
+<p>Zero solves this by being <em>radically simple</em>. One token, one fee, one purpose. A 136-byte transaction, a 48-byte account. No smart contracts, no virtual machine, no ERC-20 token standards. Just value transfer, as fast as the network can gossip it.</p>
 </section>
 
 <section class="section" id="design-principles">
@@ -2136,7 +2136,7 @@ wallet.<span class="fn">set_policy</span>(policy)
 <div class="phase-card" data-phase="0" style="border-left: 3px solid var(--green);">
   <h4>Phase 0 -- Devnet <span class="badge badge-green">Complete</span></h4>
   <ul>
-    <li>100-byte transfer format + 136-byte storage with full sig</li>
+    <li>136-byte transfer format (Ed25519 full signature)</li>
     <li>48-byte account state, DashMap-backed AccountStore</li>
     <li>Ring buffer transfer log with O(1) append/evict</li>
     <li>Ed25519 + BLAKE3</li>
